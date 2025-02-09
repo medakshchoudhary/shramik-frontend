@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "build-android-apk":"cd android && gradlew.bat clean && gradlew.bat assembleRelease",
+    "run-android-apk":"cd android && gradlew.bat clean && cd .. && npx react-native run-android",
+    "healthcheck":"npx react-native doctor",
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "lint": "eslint .",
