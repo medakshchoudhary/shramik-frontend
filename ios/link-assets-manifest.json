@@ -1,0 +1,17 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/Merriweather-Bold.ttf",
+      "sha1": "2e0d48029923ed11060caaed1136ac128faca640"
+    },
+    {
+      "path": "src/assets/fonts/Merriweather-Regular.ttf",
+      "sha1": "88f0ca30082490dabc2ce54e357876d8ea4fb4ac"
+    },
+    {
+      "path": "src/assets/fonts/Merriweather-UltraBold.ttf",
+      "sha1": "0205d13946e3b4d6115b1450f5edd0727fd42fa2"
+    }
+  ]
+}
