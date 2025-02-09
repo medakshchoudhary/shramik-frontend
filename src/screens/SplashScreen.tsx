@@ -1,11 +1,17 @@
 import React, {useEffect} from 'react';
-import {View, Text, StyleSheet, Image} from 'react-native';
+import {View, Text, Image} from 'react-native';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {styled} from 'nativewind';
+
 
 type SplashScreenProps = {
   navigation: NativeStackNavigationProp<any>;
 };
+
+const StyledView = styled(View);
+const StyledText = styled(Text);
+const StyledImage = styled(Image);
 
 function SplashScreen({navigation}: SplashScreenProps): React.JSX.Element {
   useEffect(() => {
@@ -17,34 +23,17 @@ function SplashScreen({navigation}: SplashScreenProps): React.JSX.Element {
   }, [navigation]);
 
   return (
-    <View style={styles.container}>
-      <Image
+    <StyledView className="flex-1 items-center justify-center bg-white">
+      <StyledImage
         source={require('../assets/images/logo/shramik-no-bg.png')}
-        style={styles.logo}
+        style={{width: wp('70%'), height: hp('40%'), marginBottom: hp('1%')}}
         resizeMode="contain"
       />
-      <Text style={styles.title}>Uplifting the Karigars</Text>
-    </View>
+      <StyledText className="text-black font-merriweather-bold" style={{fontSize: hp('2.5%')}}>
+        Uplifting the Karigars
+      </StyledText>
+    </StyledView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logo: {
-    width: wp('70%'),
-    height: hp('40%'),
-    marginBottom: 5,
-  },
-  title: {
-    fontSize: hp('3%'),
-    color: '#000000',
-    fontFamily: 'Poppins-Bold',
-  },
-});
 
 export default SplashScreen;
