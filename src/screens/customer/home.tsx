@@ -1,28 +1,31 @@
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import {
   View,
   Text as RNText,
   TouchableOpacity,
-  ScrollView,
   TextInput as RNTextInput,
-  PermissionsAndroid,
   Platform,
+  PermissionsAndroid,
+  ScrollView,
 } from 'react-native';
 import {styled} from 'nativewind';
 import DropDownPicker from 'react-native-dropdown-picker';
 import {showToast} from '../../utils/toast';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 
 
 const StyledView = styled(View);
 const StyledText = styled(RNText);
-const StyledScrollView = styled(ScrollView);
 const StyledTextInput = styled(RNTextInput);
 const StyledTouchableOpacity = styled(TouchableOpacity);
+const StyledScrollView = styled(ScrollView);
 
 type Props = NativeStackScreenProps<any, 'CustomerHome'>;
 
 const CustomerHome: React.FC<Props> = ({route}) => {
+  const scrollViewRef = useRef<any>(null);
+
   // Get customer data from route params or could be from a global state/context
   const customerName = route.params?.fullName || 'Customer Name';
   const initial = customerName.charAt(0).toUpperCase();
@@ -77,57 +80,103 @@ const CustomerHome: React.FC<Props> = ({route}) => {
   const [hasAudioMessage, setHasAudioMessage] = useState(false);
 
   // Add new states for audio
-  const [audioPermission, setAudioPermission] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Request microphone permission
-  const requestMicrophonePermission = async () => {
+  const audioRecorderPlayer = useRef(new AudioRecorderPlayer()).current;
+  const [recordingPath, setRecordingPath] = useState<string | null>(null);
+
+  const checkMicrophonePermission = async () => {
     try {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          {
-            title: 'Microphone Permission',
-            message: 'App needs access to your microphone to record audio messages',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
-          },
-        );
-        setAudioPermission(granted === PermissionsAndroid.RESULTS.GRANTED);
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      }
-      return true;
-    } catch (err) {
-      console.warn(err);
+      if (Platform.OS !== 'android') return true;
+
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        {
+          title: 'Microphone Permission',
+          message: 'App needs access to your microphone to record audio messages',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        },
+      );
+      
+      return result === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (error) {
+      console.error('Permission check failed:', error);
       return false;
     }
   };
 
   const handleRecordAudio = async () => {
-    if (!audioPermission) {
-      const granted = await requestMicrophonePermission();
-      if (!granted) {
-        showToast.error('Microphone permission is required to record audio');
+    try {
+      const hasPermission = await checkMicrophonePermission();
+      
+      if (!hasPermission) {
+        showToast.error('Microphone permission is required for recording');
         return;
       }
-    }
-    // TODO: Implement actual audio recording
-    setIsRecording(!isRecording);
-    if (isRecording) {
-      // Stop recording and save
-      setHasAudioMessage(true);
-      showToast.success('Audio message recorded');
+
+      if (!isRecording) {
+        // Start recording
+        const path = Platform.select({
+          ios: 'voice_note.m4a',
+          android: 'sdcard/voice_note.mp4',
+        }) || 'voice_note.mp4';
+        
+        await audioRecorderPlayer.startRecorder(path);
+        setRecordingPath(path);
+        setIsRecording(true);
+        showToast.info('Recording started...');
+      } else {
+        // Stop recording
+        const result = await audioRecorderPlayer.stopRecorder();
+        setRecordingPath(result || null);
+        setIsRecording(false);
+        setHasAudioMessage(true);
+        showToast.success('Audio recorded successfully');
+      }
+    } catch (error) {
+      console.error('Recording error:', error);
+      showToast.error('Failed to record audio');
+      setIsRecording(false);
     }
   };
 
-  const handlePlayAudio = () => {
-    // TODO: Implement actual audio playback
-    setIsPlaying(!isPlaying);
+  const handlePlayAudio = async () => {
+    try {
+      if (!recordingPath) return;
+
+      if (!isPlaying) {
+        await audioRecorderPlayer.startPlayer(recordingPath);
+        setIsPlaying(true);
+        
+        // Handle playback completion
+        audioRecorderPlayer.addPlayBackListener(() => {
+          setIsPlaying(false);
+        });
+      } else {
+        await audioRecorderPlayer.stopPlayer();
+        setIsPlaying(false);
+      }
+    } catch (error) {
+      console.error('Playback error:', error);
+      showToast.error('Failed to play audio');
+      setIsPlaying(false);
+    }
   };
 
-  const handleDiscardAudio = () => {
-    setHasAudioMessage(false);
+  const handleDiscardAudio = async () => {
+    try {
+      if (isPlaying) {
+        await audioRecorderPlayer.stopPlayer();
+      }
+      setRecordingPath(null);
+      setHasAudioMessage(false);
+      setIsPlaying(false);
+    } catch (error) {
+      console.error('Discard error:', error);
+      showToast.error('Failed to discard audio');
+    }
   };
 
   const isFormValid = () => {
@@ -154,6 +203,21 @@ const CustomerHome: React.FC<Props> = ({route}) => {
     } catch (error) {
       showToast.error('Failed to create request');
     }
+  };
+
+  const handleDropdownOpen = (dropdownName: string, position: number) => {
+    // Close other dropdowns
+    if (dropdownName !== 'workerType') setWorkerTypeOpen(false);
+    if (dropdownName !== 'complexity') setComplexityOpen(false);
+    if (dropdownName !== 'duration') setDurationOpen(false);
+    if (dropdownName !== 'location') setLocationOpen(false);
+    if (dropdownName !== 'taskType') setTaskTypeOpen(false);
+
+    // Scroll to position
+    scrollViewRef.current?.scrollTo({
+      y: position,
+      animated: true,
+    });
   };
 
   return (
@@ -185,14 +249,16 @@ const CustomerHome: React.FC<Props> = ({route}) => {
 
         {/* Form container now fills remaining space */}
         <StyledView className="flex-1 bg-gray-50 rounded-xl">
-          <StyledScrollView 
+          <StyledScrollView
+            ref={scrollViewRef}
             className="p-4"
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={{paddingBottom: 20}}
           >
             <StyledView className="space-y-4">
               {/* Worker Type */}
-              <StyledView className="z-50">
+              <StyledView style={{zIndex: 50}}>
                 <StyledText className="text-gray-600 font-merriweather-regular mb-2">
                   Worker Type
                 </StyledText>
@@ -202,15 +268,20 @@ const CustomerHome: React.FC<Props> = ({route}) => {
                   items={workerTypes}
                   setOpen={setWorkerTypeOpen}
                   setValue={setWorkerType}
+                  onOpen={() => handleDropdownOpen('workerType', 0)}
                   searchable
                   placeholder="Select worker type"
                   style={{borderColor: '#D1D5DB', borderRadius: 8}}
                   textStyle={{fontFamily: 'Merriweather-Regular'}}
+                  listMode="SCROLLVIEW"
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
                 />
               </StyledView>
 
               {/* Complexity */}
-              <StyledView className="z-40">
+              <StyledView style={{zIndex: 40}}>
                 <StyledText className="text-gray-600 font-merriweather-regular mb-2">
                   Task Complexity
                 </StyledText>
@@ -220,6 +291,11 @@ const CustomerHome: React.FC<Props> = ({route}) => {
                   items={complexities}
                   setOpen={setComplexityOpen}
                   setValue={setComplexity}
+                  onOpen={() => handleDropdownOpen('complexity', 100)}
+                  listMode="SCROLLVIEW"
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
                   placeholder="Select task complexity"
                   style={{borderColor: '#D1D5DB', borderRadius: 8}}
                   textStyle={{fontFamily: 'Merriweather-Regular'}}
@@ -227,7 +303,7 @@ const CustomerHome: React.FC<Props> = ({route}) => {
               </StyledView>
 
               {/* Duration */}
-              <StyledView className="z-30">
+              <StyledView style={{zIndex: 30}}>
                 <StyledText className="text-gray-600 font-merriweather-regular mb-2">
                   Estimated Time
                 </StyledText>
@@ -237,6 +313,11 @@ const CustomerHome: React.FC<Props> = ({route}) => {
                   items={durations}
                   setOpen={setDurationOpen}
                   setValue={setDuration}
+                  onOpen={() => handleDropdownOpen('duration', 200)}
+                  listMode="SCROLLVIEW"
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
                   placeholder="Select estimated duration"
                   style={{borderColor: '#D1D5DB', borderRadius: 8}}
                   textStyle={{fontFamily: 'Merriweather-Regular'}}
@@ -244,7 +325,7 @@ const CustomerHome: React.FC<Props> = ({route}) => {
               </StyledView>
 
               {/* Location */}
-              <StyledView className="z-20">
+              <StyledView style={{zIndex: 20}}>
                 <StyledText className="text-gray-600 font-merriweather-regular mb-2">
                   Location in House
                 </StyledText>
@@ -254,6 +335,11 @@ const CustomerHome: React.FC<Props> = ({route}) => {
                   items={locations}
                   setOpen={setLocationOpen}
                   setValue={setLocation}
+                  onOpen={() => handleDropdownOpen('location', 300)}
+                  listMode="SCROLLVIEW"
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
                   placeholder="Select location"
                   style={{borderColor: '#D1D5DB', borderRadius: 8}}
                   textStyle={{fontFamily: 'Merriweather-Regular'}}
@@ -261,7 +347,7 @@ const CustomerHome: React.FC<Props> = ({route}) => {
               </StyledView>
 
               {/* Task Type */}
-              <StyledView className="z-10">
+              <StyledView style={{zIndex: 10}}>
                 <StyledText className="text-gray-600 font-merriweather-regular mb-2">
                   Task Type
                 </StyledText>
@@ -271,6 +357,11 @@ const CustomerHome: React.FC<Props> = ({route}) => {
                   items={taskTypes}
                   setOpen={setTaskTypeOpen}
                   setValue={setTaskType}
+                  onOpen={() => handleDropdownOpen('taskType', 400)}
+                  listMode="SCROLLVIEW"
+                  scrollViewProps={{
+                    nestedScrollEnabled: true,
+                  }}
                   placeholder="Select task type"
                   style={{borderColor: '#D1D5DB', borderRadius: 8}}
                   textStyle={{fontFamily: 'Merriweather-Regular'}}
@@ -396,4 +487,4 @@ const CustomerHome: React.FC<Props> = ({route}) => {
   );
 };
 
-export default CustomerHome; 
+export default CustomerHome;

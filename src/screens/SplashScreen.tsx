@@ -1,25 +1,65 @@
 import React, {useEffect} from 'react';
-import {View, Text, Image} from 'react-native';
+import {View, Text, Image, PermissionsAndroid, Platform} from 'react-native';
 import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {styled} from 'nativewind';
-
-
-type SplashScreenProps = {
-  navigation: NativeStackNavigationProp<any>;
-};
+import {showToast} from '../utils/toast';
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
 const StyledImage = styled(Image);
 
-function SplashScreen({navigation}: SplashScreenProps): React.JSX.Element {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace('Login');
-    }, 3000);
+type Props = NativeStackScreenProps<any, 'Splash'>;
 
-    return () => clearTimeout(timer);
+const SplashScreen: React.FC<Props> = ({navigation}) => {
+  useEffect(() => {
+    const requestPermissions = async () => {
+      if (Platform.OS === 'android') {
+        try {
+          const permissions = [
+            {
+              type: PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+              message: 'Microphone access is needed for voice notes',
+            },
+            {
+              type: PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+              message: 'Storage access is needed to save recordings',
+            },
+            {
+              type: PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+              message: 'Storage access is needed to play recordings',
+            },
+          ];
+
+          for (const permission of permissions) {
+            const granted = await PermissionsAndroid.request(
+              permission.type,
+              {
+                title: 'Permission Required',
+                message: permission.message,
+                buttonNeutral: 'Ask Me Later',
+                buttonNegative: 'Cancel',
+                buttonPositive: 'OK',
+              },
+            );
+
+            if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+              showToast.error(`${permission.message}. Please enable in settings.`);
+            }
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+    };
+
+    const initializeApp = async () => {
+      setTimeout(() => {
+        navigation.replace('Login');
+      }, 2000);
+    };
+
+    initializeApp();
   }, [navigation]);
 
   return (
@@ -34,6 +74,6 @@ function SplashScreen({navigation}: SplashScreenProps): React.JSX.Element {
       </StyledText>
     </StyledView>
   );
-}
+};
 
 export default SplashScreen;
