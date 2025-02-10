@@ -43,7 +43,11 @@ const CustomerRegistration: React.FC<Props> = ({navigation}) => {
     try {
       // TODO: Implement API call to register customer
       showToast.success('Registration successful!');
-      navigation.replace('CustomerHome');
+      navigation.replace('CustomerHome', {
+        fullName: formData.fullName,
+        address: formData.address,
+        pincode: formData.pincode,
+      });
     } catch (error) {
       showToast.error('Registration failed. Please try again.');
     }

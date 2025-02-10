@@ -10,6 +10,7 @@ import {styled} from 'nativewind';
 import OTPVerification from './src/screens/authentication/OTPVerification';
 import RoleSelection from './src/screens/RoleSelection';
 import CustomerRegistration from './src/screens/customer/register';
+import CustomerHome from './src/screens/customer/home';
 
 // Create custom components with default styling
 export const Text = (props: any) => (
@@ -98,6 +99,13 @@ function App(): React.JSX.Element {
           }}
         />
         <Stack.Screen name="CustomerRegistration" component={CustomerRegistration} />
+        <Stack.Screen 
+          name="CustomerHome" 
+          component={CustomerHome}
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack.Navigator>
       <Toast onShow={() => console.log('Toast shown')} />
     </NavigationContainer>
