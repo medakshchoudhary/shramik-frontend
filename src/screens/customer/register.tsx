@@ -5,7 +5,6 @@ import {
   TextInput as RNTextInput,
   TouchableOpacity,
   ScrollView,
-  Platform,
 } from 'react-native';
 import {styled} from 'nativewind';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';

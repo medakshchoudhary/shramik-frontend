@@ -5,13 +5,14 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput as RNTextInput,
-  Platform,
   PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import {styled} from 'nativewind';
 import DropDownPicker from 'react-native-dropdown-picker';
 import {showToast} from '../../utils/toast';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+
 
 const StyledView = styled(View);
 const StyledText = styled(RNText);
@@ -21,7 +22,7 @@ const StyledTouchableOpacity = styled(TouchableOpacity);
 
 type Props = NativeStackScreenProps<any, 'CustomerHome'>;
 
-const CustomerHome: React.FC<Props> = ({navigation, route}) => {
+const CustomerHome: React.FC<Props> = ({route}) => {
   // Get customer data from route params or could be from a global state/context
   const customerName = route.params?.fullName || 'Customer Name';
   const initial = customerName.charAt(0).toUpperCase();
@@ -77,7 +78,6 @@ const CustomerHome: React.FC<Props> = ({navigation, route}) => {
 
   // Add new states for audio
   const [audioPermission, setAudioPermission] = useState(false);
-  const [audioUri, setAudioUri] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Request microphone permission
@@ -116,7 +116,6 @@ const CustomerHome: React.FC<Props> = ({navigation, route}) => {
     setIsRecording(!isRecording);
     if (isRecording) {
       // Stop recording and save
-      setAudioUri('dummy-uri');
       setHasAudioMessage(true);
       showToast.success('Audio message recorded');
     }
@@ -128,7 +127,6 @@ const CustomerHome: React.FC<Props> = ({navigation, route}) => {
   };
 
   const handleDiscardAudio = () => {
-    setAudioUri(null);
     setHasAudioMessage(false);
   };
 
@@ -179,182 +177,221 @@ const CustomerHome: React.FC<Props> = ({navigation, route}) => {
         </StyledView>
       </StyledView>
 
-      <StyledScrollView className="flex-1 px-4">
+      {/* Main Content Area - Extend to bottom navigation */}
+      <StyledView className="flex-1 px-4 pb-16">
         <StyledText className="text-2xl font-merriweather-bold mt-6 mb-4 px-2">
           Create New Request
         </StyledText>
 
-        {/* Request Form Card */}
-        <StyledView className="bg-gray-50 rounded-xl p-4 mb-6">
-          <StyledView className="space-y-4">
-            {/* Worker Type */}
-            <StyledView className="z-50">
-              <StyledText className="text-gray-600 font-merriweather-regular mb-2">
-                Worker Type
-              </StyledText>
-              <DropDownPicker
-                open={workerTypeOpen}
-                value={workerType}
-                items={workerTypes}
-                setOpen={setWorkerTypeOpen}
-                setValue={setWorkerType}
-                searchable
-                placeholder="Select worker type"
-                style={{borderColor: '#D1D5DB', borderRadius: 8}}
-                textStyle={{fontFamily: 'Merriweather-Regular'}}
-              />
-            </StyledView>
-
-            {/* Complexity */}
-            <StyledView className="z-40">
-              <StyledText className="text-gray-600 font-merriweather-regular mb-2">
-                Task Complexity
-              </StyledText>
-              <DropDownPicker
-                open={complexityOpen}
-                value={complexity}
-                items={complexities}
-                setOpen={setComplexityOpen}
-                setValue={setComplexity}
-                placeholder="Select task complexity"
-                style={{borderColor: '#D1D5DB', borderRadius: 8}}
-                textStyle={{fontFamily: 'Merriweather-Regular'}}
-              />
-            </StyledView>
-
-            {/* Duration */}
-            <StyledView className="z-30">
-              <StyledText className="text-gray-600 font-merriweather-regular mb-2">
-                Estimated Time
-              </StyledText>
-              <DropDownPicker
-                open={durationOpen}
-                value={duration}
-                items={durations}
-                setOpen={setDurationOpen}
-                setValue={setDuration}
-                placeholder="Select estimated duration"
-                style={{borderColor: '#D1D5DB', borderRadius: 8}}
-                textStyle={{fontFamily: 'Merriweather-Regular'}}
-              />
-            </StyledView>
-
-            {/* Location */}
-            <StyledView className="z-20">
-              <StyledText className="text-gray-600 font-merriweather-regular mb-2">
-                Location in House
-              </StyledText>
-              <DropDownPicker
-                open={locationOpen}
-                value={location}
-                items={locations}
-                setOpen={setLocationOpen}
-                setValue={setLocation}
-                placeholder="Select location"
-                style={{borderColor: '#D1D5DB', borderRadius: 8}}
-                textStyle={{fontFamily: 'Merriweather-Regular'}}
-              />
-            </StyledView>
-
-            {/* Task Type */}
-            <StyledView className="z-10">
-              <StyledText className="text-gray-600 font-merriweather-regular mb-2">
-                Task Type
-              </StyledText>
-              <DropDownPicker
-                open={taskTypeOpen}
-                value={taskType}
-                items={taskTypes}
-                setOpen={setTaskTypeOpen}
-                setValue={setTaskType}
-                placeholder="Select task type"
-                style={{borderColor: '#D1D5DB', borderRadius: 8}}
-                textStyle={{fontFamily: 'Merriweather-Regular'}}
-              />
-            </StyledView>
-
-            {/* Other Details */}
-            {taskType === 'other' && (
-              <StyledView>
+        {/* Form container now fills remaining space */}
+        <StyledView className="flex-1 bg-gray-50 rounded-xl">
+          <StyledScrollView 
+            className="p-4"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{paddingBottom: 20}}
+          >
+            <StyledView className="space-y-4">
+              {/* Worker Type */}
+              <StyledView className="z-50">
                 <StyledText className="text-gray-600 font-merriweather-regular mb-2">
-                  Additional Details
+                  Worker Type
                 </StyledText>
-                <StyledTextInput
-                  className="border border-gray-300 rounded-lg px-4 py-3 text-base font-merriweather-regular"
-                  multiline
-                  numberOfLines={4}
-                  value={otherDetails}
-                  onChangeText={setOtherDetails}
-                  placeholder="Please describe your task"
-                  textAlignVertical="top"
+                <DropDownPicker
+                  open={workerTypeOpen}
+                  value={workerType}
+                  items={workerTypes}
+                  setOpen={setWorkerTypeOpen}
+                  setValue={setWorkerType}
+                  searchable
+                  placeholder="Select worker type"
+                  style={{borderColor: '#D1D5DB', borderRadius: 8}}
+                  textStyle={{fontFamily: 'Merriweather-Regular'}}
                 />
               </StyledView>
-            )}
 
-            {/* Audio Message Section */}
-            <StyledView className="mt-4">
-              <StyledText className="text-gray-600 font-merriweather-regular mb-2">
-                Voice Note (Optional)
-              </StyledText>
-              
-              {!hasAudioMessage ? (
-                <StyledTouchableOpacity
-                  onPress={handleRecordAudio}
-                  className={`flex-row items-center justify-center py-3 px-4 rounded-lg ${
-                    isRecording ? 'bg-red-50' : 'bg-white'
-                  } border ${isRecording ? 'border-red-500' : 'border-gray-300'}`}
-                >
-                  <StyledText
-                    className={`font-merriweather-medium ${
-                      isRecording ? 'text-red-500' : 'text-gray-600'
-                    }`}
-                  >
-                    {isRecording ? '⏺ Recording... Tap to stop' : '🎤 Record voice note'}
+              {/* Complexity */}
+              <StyledView className="z-40">
+                <StyledText className="text-gray-600 font-merriweather-regular mb-2">
+                  Task Complexity
+                </StyledText>
+                <DropDownPicker
+                  open={complexityOpen}
+                  value={complexity}
+                  items={complexities}
+                  setOpen={setComplexityOpen}
+                  setValue={setComplexity}
+                  placeholder="Select task complexity"
+                  style={{borderColor: '#D1D5DB', borderRadius: 8}}
+                  textStyle={{fontFamily: 'Merriweather-Regular'}}
+                />
+              </StyledView>
+
+              {/* Duration */}
+              <StyledView className="z-30">
+                <StyledText className="text-gray-600 font-merriweather-regular mb-2">
+                  Estimated Time
+                </StyledText>
+                <DropDownPicker
+                  open={durationOpen}
+                  value={duration}
+                  items={durations}
+                  setOpen={setDurationOpen}
+                  setValue={setDuration}
+                  placeholder="Select estimated duration"
+                  style={{borderColor: '#D1D5DB', borderRadius: 8}}
+                  textStyle={{fontFamily: 'Merriweather-Regular'}}
+                />
+              </StyledView>
+
+              {/* Location */}
+              <StyledView className="z-20">
+                <StyledText className="text-gray-600 font-merriweather-regular mb-2">
+                  Location in House
+                </StyledText>
+                <DropDownPicker
+                  open={locationOpen}
+                  value={location}
+                  items={locations}
+                  setOpen={setLocationOpen}
+                  setValue={setLocation}
+                  placeholder="Select location"
+                  style={{borderColor: '#D1D5DB', borderRadius: 8}}
+                  textStyle={{fontFamily: 'Merriweather-Regular'}}
+                />
+              </StyledView>
+
+              {/* Task Type */}
+              <StyledView className="z-10">
+                <StyledText className="text-gray-600 font-merriweather-regular mb-2">
+                  Task Type
+                </StyledText>
+                <DropDownPicker
+                  open={taskTypeOpen}
+                  value={taskType}
+                  items={taskTypes}
+                  setOpen={setTaskTypeOpen}
+                  setValue={setTaskType}
+                  placeholder="Select task type"
+                  style={{borderColor: '#D1D5DB', borderRadius: 8}}
+                  textStyle={{fontFamily: 'Merriweather-Regular'}}
+                />
+              </StyledView>
+
+              {/* Other Details */}
+              {taskType === 'other' && (
+                <StyledView>
+                  <StyledText className="text-gray-600 font-merriweather-regular mb-2">
+                    Additional Details
                   </StyledText>
-                </StyledTouchableOpacity>
-              ) : (
-                <StyledView className="bg-white border border-gray-300 rounded-lg p-4">
-                  <StyledView className="flex-row items-center justify-between">
-                    <StyledTouchableOpacity
-                      onPress={handlePlayAudio}
-                      className="flex-row items-center"
-                    >
-                      <StyledText className="font-merriweather-medium text-blue-600">
-                        {isPlaying ? '⏸ Playing...' : '▶️ Play recording'}
-                      </StyledText>
-                    </StyledTouchableOpacity>
-                    <StyledTouchableOpacity
-                      onPress={handleDiscardAudio}
-                      className="flex-row items-center"
-                    >
-                      <StyledText className="font-merriweather-medium text-red-500">
-                        🗑️ Discard
-                      </StyledText>
-                    </StyledTouchableOpacity>
-                  </StyledView>
+                  <StyledTextInput
+                    className="border border-gray-300 rounded-lg px-4 py-3 text-base font-merriweather-regular"
+                    multiline
+                    numberOfLines={4}
+                    value={otherDetails}
+                    onChangeText={setOtherDetails}
+                    placeholder="Please describe your task"
+                    textAlignVertical="top"
+                  />
                 </StyledView>
               )}
-            </StyledView>
 
-            {/* Submit Button */}
-            <StyledTouchableOpacity
-              className={`w-full rounded-lg py-4 items-center mt-6 ${
-                isFormValid() ? 'bg-blue-600' : 'bg-gray-200'
-              }`}
-              onPress={handleSubmit}
-              disabled={!isFormValid()}
-            >
-              <StyledText
-                className={`text-xl font-merriweather-medium ${
-                  isFormValid() ? 'text-white' : 'text-gray-600'
+              {/* Audio Message Section */}
+              <StyledView className="mt-4">
+                <StyledText className="text-gray-600 font-merriweather-regular mb-2">
+                  Voice Note (Optional)
+                </StyledText>
+                
+                {!hasAudioMessage ? (
+                  <StyledTouchableOpacity
+                    onPress={handleRecordAudio}
+                    className={`flex-row items-center justify-center py-3 px-4 rounded-lg ${
+                      isRecording ? 'bg-red-50' : 'bg-white'
+                    } border ${isRecording ? 'border-red-500' : 'border-gray-300'}`}
+                  >
+                    <StyledText
+                      className={`font-merriweather-medium ${
+                        isRecording ? 'text-red-500' : 'text-gray-600'
+                      }`}
+                    >
+                      {isRecording ? '⏺ Recording... Tap to stop' : '🎤 Record voice note'}
+                    </StyledText>
+                  </StyledTouchableOpacity>
+                ) : (
+                  <StyledView className="bg-white border border-gray-300 rounded-lg p-4">
+                    <StyledView className="flex-row items-center justify-between">
+                      <StyledTouchableOpacity
+                        onPress={handlePlayAudio}
+                        className="flex-row items-center"
+                      >
+                        <StyledText className="font-merriweather-medium text-blue-600">
+                          {isPlaying ? '⏸ Playing...' : '▶️ Play recording'}
+                        </StyledText>
+                      </StyledTouchableOpacity>
+                      <StyledTouchableOpacity
+                        onPress={handleDiscardAudio}
+                        className="flex-row items-center"
+                      >
+                        <StyledText className="font-merriweather-medium text-red-500">
+                          🗑️ Discard
+                        </StyledText>
+                      </StyledTouchableOpacity>
+                    </StyledView>
+                  </StyledView>
+                )}
+              </StyledView>
+
+              {/* Submit Button */}
+              <StyledTouchableOpacity
+                className={`w-full rounded-lg py-4 items-center mt-6 ${
+                  isFormValid() ? 'bg-blue-600' : 'bg-gray-200'
                 }`}
+                onPress={handleSubmit}
+                disabled={!isFormValid()}
               >
-                Submit Request
-              </StyledText>
-            </StyledTouchableOpacity>
-          </StyledView>
+                <StyledText
+                  className={`text-xl font-merriweather-medium ${
+                    isFormValid() ? 'text-white' : 'text-gray-600'
+                  }`}
+                >
+                  Submit Request
+                </StyledText>
+              </StyledTouchableOpacity>
+            </StyledView>
+          </StyledScrollView>
         </StyledView>
-      </StyledScrollView>
+      </StyledView>
+
+      {/* Bottom Navigation Bar - Now overlays on form */}
+      <StyledView className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white">
+        <StyledView className="flex-row py-2">
+          <StyledTouchableOpacity 
+            className="flex-1 items-center py-2"
+            onPress={() => {/* Handle navigation */}}
+          >
+            <StyledText className="text-sm font-merriweather-medium text-blue-600">
+              🔨 New Request
+            </StyledText>
+          </StyledTouchableOpacity>
+
+          <StyledTouchableOpacity 
+            className="flex-1 items-center py-2"
+            onPress={() => {/* Handle navigation */}}
+          >
+            <StyledText className="text-sm font-merriweather-medium text-gray-500">
+              📋 History
+            </StyledText>
+          </StyledTouchableOpacity>
+
+          <StyledTouchableOpacity 
+            className="flex-1 items-center py-2"
+            onPress={() => {/* Handle navigation */}}
+          >
+            <StyledText className="text-sm font-merriweather-medium text-gray-500">
+              👤 Profile
+            </StyledText>
+          </StyledTouchableOpacity>
+        </StyledView>
+      </StyledView>
     </StyledView>
   );
 };
