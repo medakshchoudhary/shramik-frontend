@@ -13,11 +13,20 @@ type RoleSelectionProps = {
 };
 
 function RoleSelection({navigation}: RoleSelectionProps): React.JSX.Element {
-  const handleRoleSelection = (role: 'karigar' | 'contractor') => {
+  const handleRoleSelection = (role: 'karigar' | 'contractor' | 'organization') => {
     showToast.success(`You have selected ${role} role`);
-    // Navigate to appropriate screen based on role
-    console.log(`${role} selected`);
-    // navigation.navigate(...);
+    
+    switch (role) {
+      case 'karigar':
+        navigation.navigate('WorkerRegistration');
+        break;
+      case 'contractor':
+        navigation.navigate('ContractorRegistration');
+        break;
+      case 'organization':
+        navigation.navigate('CustomerRegistration');
+        break;
+    }
   };
 
   return (
@@ -36,11 +45,20 @@ function RoleSelection({navigation}: RoleSelectionProps): React.JSX.Element {
       </StyledTouchableOpacity>
 
       <StyledTouchableOpacity 
-        className="w-full bg-blue-600 rounded-lg py-4 items-center"
+        className="w-full bg-blue-600 rounded-lg py-4 items-center mb-4"
         onPress={() => handleRoleSelection('contractor')}
       >
         <StyledText className="text-xl font-merriweather-medium text-white">
           Contractor
+        </StyledText>
+      </StyledTouchableOpacity>
+
+      <StyledTouchableOpacity 
+        className="w-full bg-blue-600 rounded-lg py-4 items-center"
+        onPress={() => handleRoleSelection('organization')}
+      >
+        <StyledText className="text-xl font-merriweather-medium text-white">
+          Organization
         </StyledText>
       </StyledTouchableOpacity>
     </StyledView>
