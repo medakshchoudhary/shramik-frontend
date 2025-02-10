@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {View, Text as RNText, TextInput as RNTextInput, Image, TouchableOpacity} from 'react-native';
+import React, {useState, useRef, useEffect} from 'react';
+import {View, Text as RNText, TextInput as RNTextInput, Image, TouchableOpacity, Keyboard} from 'react-native';
 import {styled} from 'nativewind';
 import {heightPercentageToDP as hp, widthPercentageToDP as wp} from 'react-native-responsive-screen';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -17,23 +17,32 @@ type LoginScreenProps = {
 
 function LoginScreen({navigation}: LoginScreenProps): React.JSX.Element {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const phoneInput = useRef<any>(null);
+
+  useEffect(() => {
+    // Ensure keyboard is shown immediately
+    const timer = setTimeout(() => {
+      phoneInput.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handlePhoneChange = (text: string) => {
-    console.log('Phone number changed:', text);
     const cleaned = text.replace(/[^0-9]/g, '');
-    if (text !== cleaned) {
-      showToast.info('Please enter numbers only');
-    }
     setPhoneNumber(cleaned);
+
+    // Auto-submit when 10 digits are entered, without showing any toast
+    if (cleaned.length === 10) {
+      Keyboard.dismiss();
+      navigation.navigate('OTPVerification', {phoneNumber: cleaned});
+    }
   };
 
   const handleLogin = () => {
-    console.log('Attempting login with phone:', phoneNumber);
     if (phoneNumber.length !== 10) {
       showToast.error('Please enter a valid 10-digit mobile number');
       return;
     }
-    showToast.info('Sending OTP to your mobile number');
     navigation.navigate('OTPVerification', {phoneNumber});
   };
 
@@ -57,6 +66,7 @@ function LoginScreen({navigation}: LoginScreenProps): React.JSX.Element {
             +91
           </StyledText>
           <StyledTextInput
+            ref={phoneInput}
             className="flex-1 px-4 py-3 text-lg font-merriweather-regular text-black"
             placeholder="Mobile Number"
             placeholderTextColor="#9CA3AF"
@@ -64,8 +74,10 @@ function LoginScreen({navigation}: LoginScreenProps): React.JSX.Element {
             maxLength={10}
             value={phoneNumber}
             onChangeText={handlePhoneChange}
-            onFocus={() => console.log('Phone input focused')}
-            onBlur={() => console.log('Phone input blurred')}
+            selectTextOnFocus={true}
+            autoComplete="tel"
+            showSoftInputOnFocus={true}
+            autoFocus={true}
           />
         </StyledView>
 

@@ -1,5 +1,13 @@
 import React, {useState, useRef, useEffect} from 'react';
-import {View, Text as RNText, TextInput as RNTextInput, TouchableOpacity} from 'react-native';
+import {
+  View,
+  Text as RNText,
+  TextInput as RNTextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Keyboard,
+  Platform,
+} from 'react-native';
 import {styled} from 'nativewind';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {showToast} from '../../utils/toast';
@@ -10,104 +18,210 @@ const StyledText = styled(RNText);
 const StyledTextInput = styled(RNTextInput);
 const StyledTouchableOpacity = styled(TouchableOpacity);
 
+const CELL_COUNT = 6;
+const DEMO_OTP = '123456';
+
 type Props = NativeStackScreenProps<RootStackParamList, 'OTPVerification'>;
 
 const OTPVerification: React.FC<Props> = ({navigation, route}) => {
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState<string[]>(Array(CELL_COUNT).fill(''));
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [timer, setTimer] = useState(30);
   const inputRefs = useRef<Array<any>>([]);
-  const DEMO_OTP = '123456'; // For testing purposes
+  const firstInput = useRef<any>(null);
 
   useEffect(() => {
-    console.log('OTP screen loaded with phone:', route.params.phoneNumber);
-  }, [route.params.phoneNumber]);
+    startTimer();
+    // Remove the timeout to ensure immediate focus
+    firstInput.current?.focus();
+  }, []);
 
-  const handleOtpChange = (text: string, index: number) => {
-    console.log('OTP digit changed:', text, 'at index:', index);
-    const cleaned = text.replace(/[^0-9]/g, '');
-    if (text !== cleaned) {
-      showToast.info('Please enter numbers only');
-      return;
-    }
+  const startTimer = () => {
+    setTimer(30);
+    const interval = setInterval(() => {
+      setTimer((prevTimer) => {
+        if (prevTimer <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prevTimer - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  };
+
+  const handleOtpChange = (value: string, index: number) => {
     const newOtp = [...otp];
+    // Only allow numbers and auto-clean input
+    const cleaned = value.replace(/[^0-9]/g, '');
     newOtp[index] = cleaned;
     setOtp(newOtp);
 
-    if (cleaned.length === 1 && index < 5) {
-      inputRefs.current[index + 1].focus();
+    // Auto-advance to next input
+    if (cleaned && index < CELL_COUNT - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    // Auto-verify when all digits are filled
+    if (cleaned) {
+      const fullOtp = [...newOtp].join('');
+      if (fullOtp.length === CELL_COUNT) {
+        Keyboard.dismiss();
+        handleVerifyOTP(fullOtp);
+      }
     }
   };
 
-  const handleVerifyOTP = () => {
-    const enteredOTP = otp.join('');
-    console.log('Verifying OTP:', enteredOTP);
-
-    if (enteredOTP === DEMO_OTP) {
-      console.log('OTP verified successfully');
-      showToast.success('OTP verified successfully');
-      setTimeout(() => {
-        navigation.replace('RoleSelection');
-      }, 1000);
-    } else {
-      console.warn('Invalid OTP entered');
-      showToast.error('Invalid OTP. Please try again');
+  const handleKeyPress = (event: any, index: number) => {
+    if (event.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+      const newOtp = [...otp];
+      newOtp[index - 1] = '';
+      setOtp(newOtp);
     }
   };
 
-  const handleResendOTP = () => {
-    showToast.info('New OTP has been sent to your mobile number');
-    setOtp(['', '', '', '', '', '']);
-    inputRefs.current[0]?.focus();
+  const handleVerifyOTP = async (enteredOTP: string) => {
+    if (isVerifying) return; // Prevent multiple verification attempts
+    setIsVerifying(true);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      if (enteredOTP === DEMO_OTP) {
+        showToast.success('Verification successful');
+        setTimeout(() => {
+          navigation.replace('RoleSelection');
+        }, 500);
+      } else {
+        showToast.error('Invalid verification code');
+        setOtp(Array(CELL_COUNT).fill(''));
+        firstInput.current?.focus();
+      }
+    } catch (error) {
+      showToast.error('Verification failed');
+      setOtp(Array(CELL_COUNT).fill(''));
+      firstInput.current?.focus();
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (timer > 0) return;
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setOtp(Array(CELL_COUNT).fill(''));
+      firstInput.current?.focus();
+      startTimer();
+      showToast.info('Verification code sent');
+    } catch (error) {
+      showToast.error('Failed to resend code');
+    }
   };
 
   return (
-    <StyledView className="flex-1 bg-white px-6">
-      <StyledView className="flex-1 justify-center">
-        <StyledText className="text-2xl font-merriweather-bold text-center mb-4">
-          Enter verification code
+    <StyledView className="flex-1 bg-white">
+      {/* Header */}
+      <StyledView className="border-b border-gray-200">
+        <StyledView className="px-6 py-4">
+          <StyledText className="text-2xl font-merriweather-bold">
+            Verify OTP
+          </StyledText>
+        </StyledView>
+      </StyledView>
+
+      <StyledView className="px-6 pt-6">
+        <StyledText className="text-base font-merriweather-regular text-gray-600 mb-1">
+          Enter the verification code sent to
         </StyledText>
-        <StyledText className="text-gray-500 font-merriweather-regular text-center mb-8">
-          We have sent you a 6 digit verification code on{'\n'}
-          +91 {route.params.phoneNumber}
+        <StyledText className="text-lg font-merriweather-bold text-gray-900 mb-8">
+          +91 {route.params.phoneNumber.replace(/(\d{5})(\d{5})/, '$1 $2')}
         </StyledText>
 
-        <StyledView className="flex-row justify-between mb-8">
-          {[0, 1, 2, 3, 4, 5].map((index) => (
+        {/* OTP Input */}
+        <StyledView className="flex-row justify-between mb-6">
+          {Array(CELL_COUNT).fill(null).map((_, index) => (
             <StyledTextInput
               key={index}
-              ref={(ref) => (inputRefs.current[index] = ref)}
-              className="w-12 h-12 border border-gray-300 rounded-lg text-center text-xl font-merriweather-bold"
+              ref={(ref) => {
+                inputRefs.current[index] = ref;
+                if (index === 0) firstInput.current = ref;
+              }}
+              className={`w-12 h-12 border rounded-lg text-center font-merriweather-bold
+                ${otp[index] ? 'border-blue-600 border-2' : 'border-gray-300'}`}
+              style={{
+                fontSize: 20,
+                lineHeight: Platform.OS === 'ios' ? 24 : 28,
+              }}
               maxLength={1}
               keyboardType="number-pad"
               value={otp[index]}
               onChangeText={(text) => handleOtpChange(text, index)}
+              onKeyPress={(e) => handleKeyPress(e, index)}
+              editable={!isVerifying}
+              caretHidden={false}
+              selectTextOnFocus={true}
+              autoComplete="off"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              showSoftInputOnFocus={true}
+              autoFocus={index === 0}
+              textContentType="oneTimeCode"
             />
           ))}
         </StyledView>
 
+        {/* Resend Section */}
+        <StyledView className="flex-row justify-center items-center mb-8">
+          <StyledText className="text-base font-merriweather-regular text-gray-600">
+            Didn't receive code?{' '}
+          </StyledText>
+          <StyledTouchableOpacity
+            onPress={handleResendOTP}
+            disabled={timer > 0 || isVerifying}
+          >
+            <StyledText 
+              className={`font-merriweather-medium ${
+                timer > 0 ? 'text-gray-400' : 'text-blue-600'
+              }`}
+            >
+              {timer > 0 ? `Resend in ${timer}s` : 'Resend'}
+            </StyledText>
+          </StyledTouchableOpacity>
+        </StyledView>
+
+        {/* Verify Button */}
         <StyledTouchableOpacity
           className={`w-full rounded-lg py-4 items-center ${
-            otp.every((digit) => digit !== '') ? 'bg-blue-600' : 'bg-gray-200'
+            isVerifying || otp.every(digit => digit !== '') 
+              ? 'bg-blue-600' 
+              : 'bg-gray-200'
           }`}
-          activeOpacity={0.8}
-          onPress={handleVerifyOTP}
-          disabled={!otp.every((digit) => digit !== '')}
+          onPress={() => handleVerifyOTP(otp.join(''))}
+          disabled={isVerifying || !otp.every(digit => digit !== '')}
         >
-          <StyledText
-            className={`text-xl font-merriweather-medium ${
-              otp.every((digit) => digit !== '') ? 'text-white' : 'text-gray-600'
-            }`}
-          >
-            Next
-          </StyledText>
-        </StyledTouchableOpacity>
-
-        <StyledTouchableOpacity
-          className="mt-4"
-          onPress={handleResendOTP}
-        >
-          <StyledText className="text-blue-600 font-merriweather-medium text-center">
-            Resend OTP
-          </StyledText>
+          {isVerifying ? (
+            <StyledView className="flex-row items-center justify-center w-full">
+              <ActivityIndicator 
+                color="white" 
+                size={20} 
+                style={{marginRight: 8}}
+              />
+              <StyledText className="text-lg font-merriweather-medium text-white">
+                Verifying...
+              </StyledText>
+            </StyledView>
+          ) : (
+            <StyledText
+              className={`text-lg font-merriweather-medium ${
+                otp.every(digit => digit !== '') ? 'text-white' : 'text-gray-600'
+              }`}
+            >
+              Verify & Proceed
+            </StyledText>
+          )}
         </StyledTouchableOpacity>
       </StyledView>
     </StyledView>
