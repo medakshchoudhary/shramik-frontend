@@ -5,6 +5,7 @@ import {
   TextInput as RNTextInput,
   TouchableOpacity,
   ScrollView,
+  Keyboard,
 } from 'react-native';
 import {styled} from 'nativewind';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -40,13 +41,17 @@ const CustomerRegistration: React.FC<Props> = ({navigation}) => {
     }
 
     try {
+      Keyboard.dismiss();  // Dismiss keyboard immediately
       // TODO: Implement API call to register customer
       showToast.success('Registration successful!');
-      navigation.replace('CustomerHome', {
-        fullName: formData.fullName,
-        address: formData.address,
-        pincode: formData.pincode,
-      });
+      // Use setTimeout to ensure toast is visible before navigation
+      setTimeout(() => {
+        navigation.replace('CustomerHome', {
+          fullName: formData.fullName,
+          address: formData.address,
+          pincode: formData.pincode,
+        });
+      }, 100);
     } catch (error) {
       showToast.error('Registration failed. Please try again.');
     }

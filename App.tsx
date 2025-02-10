@@ -11,6 +11,8 @@ import OTPVerification from './src/screens/authentication/OTPVerification';
 import RoleSelection from './src/screens/RoleSelection';
 import CustomerRegistration from './src/screens/customer/register';
 import CustomerHome from './src/screens/customer/home';
+import CustomerHistory from './src/screens/customer/history';
+import CustomerProfile from './src/screens/customer/profile';
 
 // Create custom components with default styling
 export const Text = (props: any) => (
@@ -102,6 +104,20 @@ function App(): React.JSX.Element {
         <Stack.Screen 
           name="CustomerHome" 
           component={CustomerHome}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="CustomerHistory" 
+          component={CustomerHistory}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="CustomerProfile" 
+          component={CustomerProfile}
           options={{
             headerShown: false,
           }}

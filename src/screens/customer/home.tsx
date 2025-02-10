@@ -23,7 +23,7 @@ const StyledScrollView = styled(ScrollView);
 
 type Props = NativeStackScreenProps<any, 'CustomerHome'>;
 
-const CustomerHome: React.FC<Props> = ({route}) => {
+const CustomerHome: React.FC<Props> = ({route, navigation}) => {
   const scrollViewRef = useRef<any>(null);
 
   // Get customer data from route params or could be from a global state/context
@@ -218,6 +218,25 @@ const CustomerHome: React.FC<Props> = ({route}) => {
       y: position,
       animated: true,
     });
+  };
+
+  const handleNavigation = (screen: string) => {
+    switch (screen) {
+      case 'new_request':
+        // Already on new request screen
+        break;
+      case 'history':
+        navigation.navigate('CustomerHistory');
+        break;
+      case 'profile':
+        navigation.navigate('CustomerProfile', {
+          fullName: customerName,
+          phoneNumber: route.params?.phoneNumber,
+          address: route.params?.address,
+          pincode: route.params?.pincode,
+        });
+        break;
+    }
   };
 
   return (
@@ -457,7 +476,7 @@ const CustomerHome: React.FC<Props> = ({route}) => {
         <StyledView className="flex-row py-2">
           <StyledTouchableOpacity 
             className="flex-1 items-center py-2"
-            onPress={() => {/* Handle navigation */}}
+            onPress={() => handleNavigation('new_request')}
           >
             <StyledText className="text-sm font-merriweather-medium text-blue-600">
               🔨 New Request
@@ -466,7 +485,7 @@ const CustomerHome: React.FC<Props> = ({route}) => {
 
           <StyledTouchableOpacity 
             className="flex-1 items-center py-2"
-            onPress={() => {/* Handle navigation */}}
+            onPress={() => handleNavigation('history')}
           >
             <StyledText className="text-sm font-merriweather-medium text-gray-500">
               📋 History
@@ -475,7 +494,7 @@ const CustomerHome: React.FC<Props> = ({route}) => {
 
           <StyledTouchableOpacity 
             className="flex-1 items-center py-2"
-            onPress={() => {/* Handle navigation */}}
+            onPress={() => handleNavigation('profile')}
           >
             <StyledText className="text-sm font-merriweather-medium text-gray-500">
               👤 Profile
