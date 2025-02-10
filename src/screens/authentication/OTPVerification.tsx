@@ -29,25 +29,39 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
   const [timer, setTimer] = useState(30);
   const inputRefs = useRef<Array<any>>([]);
   const firstInput = useRef<any>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     startTimer();
-    // Remove the timeout to ensure immediate focus
     firstInput.current?.focus();
+
+    // Show toast message when screen mounts
+    showToast.info(`OTP sent to +91 ${route.params.phoneNumber}`);
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
   }, []);
 
   const startTimer = () => {
     setTimer(30);
-    const interval = setInterval(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    timerRef.current = setInterval(() => {
       setTimer((prevTimer) => {
         if (prevTimer <= 1) {
-          clearInterval(interval);
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+          }
           return 0;
         }
         return prevTimer - 1;
       });
     }, 1000);
-    return () => clearInterval(interval);
   };
 
   const handleOtpChange = (value: string, index: number) => {
@@ -114,7 +128,7 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       setOtp(Array(CELL_COUNT).fill(''));
       firstInput.current?.focus();
-      startTimer();
+      startTimer(); // Restart timer
       showToast.info('Verification code sent');
     } catch (error) {
       showToast.error('Failed to resend code');
@@ -125,14 +139,14 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
     <StyledView className="flex-1 bg-white">
       {/* Header */}
       <StyledView className="border-b border-gray-200">
-        <StyledView className="px-6 py-5">
-          <StyledText className="text-[26px] font-merriweather-bold">
+        <StyledView className="px-6 py-6">
+          <StyledText className="text-[28px] font-merriweather-bold">
             Verify OTP
           </StyledText>
         </StyledView>
       </StyledView>
 
-      <StyledView className="px-6 pt-6">
+      <StyledView className="px-6 pt-10">
         <StyledText className="text-base font-merriweather-regular text-gray-600 mb-1">
           Enter the verification code sent to
         </StyledText>
