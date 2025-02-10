@@ -125,8 +125,8 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
     <StyledView className="flex-1 bg-white">
       {/* Header */}
       <StyledView className="border-b border-gray-200">
-        <StyledView className="px-6 py-4">
-          <StyledText className="text-2xl font-merriweather-bold">
+        <StyledView className="px-6 py-5">
+          <StyledText className="text-[26px] font-merriweather-bold">
             Verify OTP
           </StyledText>
         </StyledView>
@@ -137,7 +137,7 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
           Enter the verification code sent to
         </StyledText>
         <StyledText className="text-lg font-merriweather-bold text-gray-900 mb-8">
-          +91 {route.params.phoneNumber.replace(/(\d{5})(\d{5})/, '$1 $2')}
+          +91 {route.params.phoneNumber}
         </StyledText>
 
         {/* OTP Input */}
