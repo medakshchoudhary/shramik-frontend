@@ -13,18 +13,14 @@ type RoleSelectionProps = {
 };
 
 function RoleSelection({navigation}: RoleSelectionProps): React.JSX.Element {
-  const handleRoleSelection = (role: 'karigar' | 'contractor' | 'organization') => {
-    showToast.success(`You have selected ${role} role`);
-    
+  const handleRoleSelection = (role: 'customer' | 'worker') => {
     switch (role) {
-      case 'karigar':
-        navigation.navigate('WorkerRegistration');
-        break;
-      case 'contractor':
-        navigation.navigate('ContractorRegistration');
-        break;
-      case 'organization':
+      case 'customer':
         navigation.navigate('CustomerRegistration');
+        break;
+      case 'worker':
+        // TODO: Add worker registration later
+        showToast.info('Worker registration coming soon');
         break;
     }
   };
@@ -37,28 +33,19 @@ function RoleSelection({navigation}: RoleSelectionProps): React.JSX.Element {
       
       <StyledTouchableOpacity 
         className="w-full bg-blue-600 rounded-lg py-4 items-center mb-4"
-        onPress={() => handleRoleSelection('karigar')}
+        onPress={() => handleRoleSelection('customer')}
       >
         <StyledText className="text-xl font-merriweather-medium text-white">
-          Karigar
-        </StyledText>
-      </StyledTouchableOpacity>
-
-      <StyledTouchableOpacity 
-        className="w-full bg-blue-600 rounded-lg py-4 items-center mb-4"
-        onPress={() => handleRoleSelection('contractor')}
-      >
-        <StyledText className="text-xl font-merriweather-medium text-white">
-          Contractor
+          Customer
         </StyledText>
       </StyledTouchableOpacity>
 
       <StyledTouchableOpacity 
         className="w-full bg-blue-600 rounded-lg py-4 items-center"
-        onPress={() => handleRoleSelection('organization')}
+        onPress={() => handleRoleSelection('worker')}
       >
         <StyledText className="text-xl font-merriweather-medium text-white">
-          Organization
+          Worker
         </StyledText>
       </StyledTouchableOpacity>
     </StyledView>

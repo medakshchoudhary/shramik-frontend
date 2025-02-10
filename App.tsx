@@ -9,6 +9,7 @@ import {typography} from './src/theme/typography';
 import {styled} from 'nativewind';
 import OTPVerification from './src/screens/authentication/OTPVerification';
 import RoleSelection from './src/screens/RoleSelection';
+import CustomerRegistration from './src/screens/customer/register';
 
 // Create custom components with default styling
 export const Text = (props: any) => (
@@ -96,6 +97,7 @@ function App(): React.JSX.Element {
             blur: () => console.log('Role selection screen blurred'),
           }}
         />
+        <Stack.Screen name="CustomerRegistration" component={CustomerRegistration} />
       </Stack.Navigator>
       <Toast onShow={() => console.log('Toast shown')} />
     </NavigationContainer>

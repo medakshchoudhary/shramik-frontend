@@ -43,7 +43,7 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
         clearInterval(timerRef.current);
       }
     };
-  }, []);
+  }, [route.params.phoneNumber]);
 
   const startTimer = () => {
     setTimer(30);
