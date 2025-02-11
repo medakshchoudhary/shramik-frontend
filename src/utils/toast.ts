@@ -8,20 +8,22 @@ export const showToast = {
       text2: message,
       position: 'bottom',
       visibilityTime: 3000,
-      topOffset: 60,
+      topOffset: 50,
       props: {
         text1Style: {
-          fontSize: 32,
+          fontSize: 24,
           fontFamily: 'Merriweather-Bold',
           paddingVertical: 8,
         },
         text2Style: {
-          fontSize: 20,
+          fontSize: 18,
           fontFamily: 'Merriweather-Regular',
           paddingBottom: 8,
         },
         contentContainerStyle: {
           padding: 16,
+          width: '95%',
+          minHeight: 120,
         },
       },
     });
@@ -33,20 +35,22 @@ export const showToast = {
       text2: message,
       position: 'bottom',
       visibilityTime: 4000,
-      topOffset: 60,
+      topOffset: 50,
       props: {
         text1Style: {
-          fontSize: 32,
+          fontSize: 24,
           fontFamily: 'Merriweather-Bold',
           paddingVertical: 8,
         },
         text2Style: {
-          fontSize: 20,
+          fontSize: 18,
           fontFamily: 'Merriweather-Regular',
           paddingBottom: 8,
         },
         contentContainerStyle: {
           padding: 16,
+          width: '95%',
+          minHeight: 120,
         },
       },
     });
@@ -58,20 +62,22 @@ export const showToast = {
       text2: message,
       position: 'bottom',
       visibilityTime: 3000,
-      topOffset: 60,
+      topOffset: 50,
       props: {
         text1Style: {
-          fontSize: 32,
+          fontSize: 24,
           fontFamily: 'Merriweather-Bold',
           paddingVertical: 8,
         },
         text2Style: {
-          fontSize: 20,
+          fontSize: 18,
           fontFamily: 'Merriweather-Regular',
           paddingBottom: 8,
         },
         contentContainerStyle: {
           padding: 16,
+          width: '95%',
+          minHeight: 120,
         },
       },
     });
