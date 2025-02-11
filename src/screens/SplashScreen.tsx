@@ -54,6 +54,7 @@ const SplashScreen: React.FC<Props> = ({navigation}) => {
     };
 
     const initializeApp = async () => {
+      await requestPermissions();
       setTimeout(() => {
         navigation.replace('Login');
       }, 2000);
