@@ -1,12 +1,11 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text as RNText,
   TextInput as RNTextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Keyboard,
-  Platform,
   TextInput,
 } from 'react-native';
 import {styled} from 'nativewind';
@@ -158,6 +157,7 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
         onKeyPress={(e) => handleKeyPress(e, index)}
         selectTextOnFocus={true}
         editable={!isVerifying}
+        placeholderTextColor="#6B7280"
       />
     );
   };

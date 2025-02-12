@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text as RNText,
@@ -11,6 +11,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import {showToast} from '../../utils/toast';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import {getPincodeDetails, isValidPincode} from '../../data/pincodes';
 
 const StyledView = styled(View);
 const StyledText = styled(RNText);
@@ -22,7 +23,6 @@ type Props = NativeStackScreenProps<any, 'WorkerRegistration'>;
 const WorkerRegistration: React.FC<Props> = ({navigation}) => {
   // Form states
   const [fullName, setFullName] = useState('');
-  const [address, setAddress] = useState('');
   const [pincode, setPincode] = useState('');
   const [workingSince, setWorkingSince] = useState('');
   const [qualifications, setQualifications] = useState('');
@@ -46,38 +46,87 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
   ]);
   const [otherProfession, setOtherProfession] = useState('');
 
-  // Add search state and handlers for profession dropdown
-  const [professionSearch, setProfessionSearch] = useState('');
-
   // Add these states after other state declarations
   const [mainAddress, setMainAddress] = useState('');
   const [locality, setLocality] = useState('');
   const [district, setDistrict] = useState('');
   const [state, setState] = useState('');
 
-  // Add this function to handle pincode changes
+  // Add state for district dropdown
+  const [districtOpen, setDistrictOpen] = useState(false);
+  const [availableDistricts, setAvailableDistricts] = useState<{label: string; value: string}[]>([]);
+
+  useEffect(() => {
+    // Log available pincodes on mount
+    console.log('Available pincode data:', getPincodeDetails(pincode));
+  }, []);
+
+  useEffect(() => {
+    const debugPincodeSystem = () => {
+      console.log('Debugging Pincode System:');
+      try {
+        // Test with a valid pincode
+        const testPincode = "400001";
+        console.log(`Testing pincode: ${testPincode}`);
+        const result = getPincodeDetails(testPincode);
+        console.log('Result:', result);
+      } catch (error) {
+        console.error('Debug Error:', error);
+      }
+    };
+
+    debugPincodeSystem();
+  }, []);
+
   const handlePincodeChange = async (text: string) => {
-    // Only allow numbers
     const cleaned = text.replace(/[^0-9]/g, '');
     setPincode(cleaned);
 
-    if (cleaned.length === 6) {
-      try {
-        // TODO: Replace with actual API call
-        // For now using dummy data
-        const response = {
-          district: 'Mumbai',
-          state: 'Maharashtra'
-        };
-        setDistrict(response.district);
-        setState(response.state);
-      } catch (error) {
-        console.error('Error fetching location data:', error);
-        showToast.error('Error fetching location data');
+    // Clear fields when pincode is being edited
+    if (cleaned.length !== 6) {
+      setState('');
+      setDistrict('');
+      setLocality('');
+      setAvailableDistricts([]);
+      return;
+    }
+
+    // Validate pincode format
+    if (!isValidPincode(cleaned)) {
+      showToast.error('Invalid pincode format');
+      return;
+    }
+
+    // Get pincode details
+    const data = getPincodeDetails(cleaned);
+
+    if (data) {
+      setState(data.state);
+      
+      // Map districts to dropdown format
+      const districtOptions = data.districts.map(d => ({
+        label: d.name,
+        value: d.name,
+        areas: d.areas
+      }));
+
+      setAvailableDistricts(districtOptions);
+      
+      // If only one district, select it automatically
+      if (districtOptions.length === 1) {
+        setDistrict(districtOptions[0].value);
+        
+        // If district has areas, show first one as suggestion
+        if (districtOptions[0].areas.length > 0) {
+          setLocality(districtOptions[0].areas[0]);
+        }
       }
     } else {
-      setDistrict('');
+      showToast.error('Pincode not found in our database');
       setState('');
+      setDistrict('');
+      setLocality('');
+      setAvailableDistricts([]);
     }
   };
 
@@ -99,7 +148,7 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
       showToast.error('Please enter your full name');
       return false;
     }
-    if (!address.trim()) {
+    if (!mainAddress.trim()) {
       showToast.error('Please enter your address');
       return false;
     }
@@ -174,8 +223,9 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
           Full Name <StyledText className="text-red-500">*</StyledText>
         </StyledText>
         <StyledTextInput
-          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
           placeholder="Enter your full name"
+          placeholderTextColor="#6B7280"
           value={fullName}
           onChangeText={setFullName}
         />
@@ -193,8 +243,9 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
             Pin Code <StyledText className="text-red-500">*</StyledText>
           </StyledText>
           <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
             placeholder="Enter your pin code"
+            placeholderTextColor="#6B7280"
             value={pincode}
             onChangeText={handlePincodeChange}
             keyboardType="numeric"
@@ -230,16 +281,47 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
         </StyledView>
 
         {/* District Input (Auto-filled) */}
-        <StyledView className="mb-4">
+        <StyledView className="mb-4 z-40">
           <StyledText className="text-sm font-merriweather-medium mb-1">
             District <StyledText className="text-red-500">*</StyledText>
           </StyledText>
-          <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
-            value={district}
-            editable={false}
-            placeholder="Will be auto-filled from pincode"
-          />
+          {availableDistricts.length > 1 ? (
+            <DropDownPicker
+              open={districtOpen}
+              value={district}
+              items={availableDistricts}
+              setOpen={setDistrictOpen}
+              setValue={setDistrict}
+              placeholder="Select district"
+              style={{
+                borderColor: '#D1D5DB',
+                minHeight: 48,
+                borderWidth: 1,
+                borderRadius: 8
+              }}
+              placeholderStyle={{
+                color: '#6B7280',
+                fontFamily: 'Merriweather-Regular'
+              }}
+              textStyle={{
+                color: '#111827',
+                fontFamily: 'Merriweather-Regular'
+              }}
+              listMode="MODAL"
+              modalProps={{
+                animationType: "fade"
+              }}
+              modalTitle="Select District"
+            />
+          ) : (
+            <StyledTextInput
+              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
+              value={district}
+              editable={false}
+              placeholder="Will be auto-filled from pincode"
+              placeholderTextColor="#6B7280"
+            />
+          )}
         </StyledView>
 
         {/* State Input (Auto-filled) */}
@@ -267,59 +349,28 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
           items={professions}
           setOpen={setProfessionOpen}
           setValue={setProfession}
-          className="border border-gray-300 rounded-lg"
+          style={{
+            borderColor: '#D1D5DB',
+            minHeight: 48,
+            borderWidth: 1,
+            borderRadius: 8
+          }}
           placeholder="Select your profession"
+          placeholderStyle={{
+            color: '#6B7280',
+            fontFamily: 'Merriweather-Regular'
+          }}
+          textStyle={{
+            color: '#111827',
+            fontFamily: 'Merriweather-Regular'
+          }}
           searchable={true}
           searchPlaceholder="Search profession..."
-          searchTextInputProps={{
-            maxLength: 40,
-            autoCapitalize: 'none',
+          listMode="MODAL"
+          modalProps={{
+            animationType: "fade"
           }}
-          searchTextInputStyle={{
-            borderWidth: 1,
-            borderColor: '#E5E7EB',
-            borderRadius: 8,
-            paddingHorizontal: 36,
-            paddingVertical: 8,
-            fontFamily: 'Merriweather-Regular',
-            fontSize: 14,
-            marginHorizontal: 12,
-            marginVertical: 8,
-            height: 40,
-          }}
-          searchContainerStyle={{
-            borderBottomColor: '#E5E7EB',
-            borderBottomWidth: 1,
-            padding: 0,
-          }}
-          ListEmptyComponent={() => (
-            <StyledText className="text-center py-4 text-gray-500 font-merriweather-regular">
-              No profession found
-            </StyledText>
-          )}
-          CustomInput={({style, ...props}) => (
-            <StyledView className="relative mx-3 my-2">
-              <Icon
-                name="search"
-                size={20}
-                color="#9CA3AF"
-                style={{
-                  position: 'absolute',
-                  left: 12,
-                  top: 10,
-                  zIndex: 1,
-                }}
-              />
-              <StyledTextInput
-                {...props}
-                style={[style, { paddingLeft: 36 }]}
-              />
-            </StyledView>
-          )}
-          listMode="SCROLLVIEW"
-          scrollViewProps={{
-            nestedScrollEnabled: true,
-          }}
+          modalTitle="Select Profession"
         />
       </StyledView>
 
@@ -330,8 +381,9 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
             Specify Profession <StyledText className="text-red-500">*</StyledText>
           </StyledText>
           <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
-            placeholder="Enter your profession"
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular mt-2"
+            placeholder="Specify your profession"
+            placeholderTextColor="#6B7280"
             value={otherProfession}
             onChangeText={setOtherProfession}
           />
@@ -344,12 +396,12 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
           Working Since <StyledText className="text-red-500">*</StyledText>
         </StyledText>
         <StyledTextInput
-          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
-          placeholder="Enter years of experience (e.g., 5)"
+          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+          placeholder="Enter years of experience"
+          placeholderTextColor="#6B7280"
           value={workingSince}
           onChangeText={handleWorkingSinceChange}
           keyboardType="numeric"
-          maxLength={2} // Max 99 years
         />
       </StyledView>
 
@@ -359,8 +411,9 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
           Technical Qualifications
         </StyledText>
         <StyledTextInput
-          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
-          placeholder="Enter your qualifications (if any)"
+          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+          placeholder="Enter your qualifications"
+          placeholderTextColor="#6B7280"
           value={qualifications}
           onChangeText={setQualifications}
           multiline
@@ -373,8 +426,9 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
           UPI ID <StyledText className="text-red-500">*</StyledText>
         </StyledText>
         <StyledTextInput
-          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
-          placeholder="Enter UPI ID"
+          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+          placeholder="Enter your UPI ID"
+          placeholderTextColor="#6B7280"
           value={upiId}
           onChangeText={setUpiId}
         />
@@ -386,8 +440,9 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
           Aadhaar Number <StyledText className="text-red-500">*</StyledText>
         </StyledText>
         <StyledTextInput
-          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
-          placeholder="Enter Aadhaar Number"
+          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+          placeholder="Enter 12-digit Aadhaar number"
+          placeholderTextColor="#6B7280"
           value={aadhaar}
           onChangeText={handleAadhaarChange}
           keyboardType="numeric"
@@ -413,7 +468,7 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
     <FlatList
       data={[{ key: 'form' }]}
       renderItem={() => renderFormFields()}
-      className="flex-1 bg-white"
+      style={{ flex: 1, backgroundColor: 'white' }}
       keyExtractor={item => item.key}
     />
   );

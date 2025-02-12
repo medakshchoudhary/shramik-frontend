@@ -9,6 +9,8 @@ import {
 import {styled} from 'nativewind';
 import {showToast} from '../../utils/toast';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { getPincodeDetails } from '../../data/pincodes';
 
 const StyledView = styled(View);
 const StyledText = styled(RNText);
@@ -25,6 +27,8 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
   const [district, setDistrict] = useState('');
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
+  const [districtOpen, setDistrictOpen] = useState(false);
+  const [availableDistricts, setAvailableDistricts] = useState<{label: string; value: string}[]>([]);
 
   const validateForm = () => {
     if (!fullName.trim()) {
@@ -66,27 +70,37 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
     }
   };
 
-  const handlePincodeChange = async (text: string) => {
-    // Only allow numbers
+  const handlePincodeChange = (text: string) => {
     const cleaned = text.replace(/[^0-9]/g, '');
     setPincode(cleaned);
 
     if (cleaned.length === 6) {
-      try {
-        // TODO: Replace with actual API call
-        const response = {
-          district: 'Mumbai',
-          state: 'Maharashtra'
-        };
-        setDistrict(response.district);
-        setState(response.state);
-      } catch (error) {
-        console.error('Error fetching location data:', error);
-        showToast.error('Error fetching location data');
+      const data = getPincodeDetails(cleaned);
+      if (data) {
+        setState(data.state);
+        // Convert districts to dropdown format
+        const districtOptions = data.districts.map(d => ({
+          label: d,
+          value: d
+        }));
+        setAvailableDistricts(districtOptions);
+        
+        // If only one district, set it automatically
+        if (districtOptions.length === 1) {
+          setDistrict(districtOptions[0].value);
+        } else {
+          setDistrict(''); // Clear district if multiple options
+        }
+      } else {
+        showToast.error('Invalid pincode');
+        setState('');
+        setDistrict('');
+        setAvailableDistricts([]);
       }
     } else {
-      setDistrict('');
       setState('');
+      setDistrict('');
+      setAvailableDistricts([]);
     }
   };
 
@@ -118,8 +132,9 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
             Full Name <StyledText className="text-red-500">*</StyledText>
           </StyledText>
           <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
             placeholder="Enter your full name"
+            placeholderTextColor="#6B7280"
             value={fullName}
             onChangeText={setFullName}
           />
@@ -137,8 +152,9 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
               Pin Code <StyledText className="text-red-500">*</StyledText>
             </StyledText>
             <StyledTextInput
-              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
               placeholder="Enter your pin code"
+              placeholderTextColor="#6B7280"
               value={pincode}
               onChangeText={handlePincodeChange}
               keyboardType="numeric"
@@ -152,8 +168,9 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
               Main Address <StyledText className="text-red-500">*</StyledText>
             </StyledText>
             <StyledTextInput
-              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
               placeholder="House/Flat No., Street Name"
+              placeholderTextColor="#6B7280"
               value={mainAddress}
               onChangeText={setMainAddress}
               multiline
@@ -166,24 +183,49 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
               Locality
             </StyledText>
             <StyledTextInput
-              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
               placeholder="Area/Locality (Optional)"
+              placeholderTextColor="#6B7280"
               value={locality}
               onChangeText={setLocality}
             />
           </StyledView>
 
-          {/* District Input (Auto-filled) */}
-          <StyledView className="mb-4">
+          {/* District Input */}
+          <StyledView className="mb-4 z-50">
             <StyledText className="text-sm font-merriweather-medium mb-1">
               District <StyledText className="text-red-500">*</StyledText>
             </StyledText>
-            <StyledTextInput
-              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
-              value={district}
-              editable={false}
-              placeholder="Will be auto-filled from pincode"
-            />
+            {availableDistricts.length > 1 ? (
+              <DropDownPicker
+                open={districtOpen}
+                value={district}
+                items={availableDistricts}
+                setOpen={setDistrictOpen}
+                setValue={setDistrict}
+                placeholder="Select district"
+                placeholderStyle={{
+                  color: '#6B7280',
+                  fontFamily: 'Merriweather-Regular'
+                }}
+                textStyle={{
+                  color: '#111827',
+                  fontFamily: 'Merriweather-Regular'
+                }}
+                style={{
+                  borderColor: '#D1D5DB',
+                  minHeight: 48
+                }}
+              />
+            ) : (
+              <StyledTextInput
+                className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
+                value={district}
+                editable={false}
+                placeholder="Will be auto-filled from pincode"
+                placeholderTextColor="#6B7280"
+              />
+            )}
           </StyledView>
 
           {/* State Input (Auto-filled) */}
@@ -196,6 +238,7 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
               value={state}
               editable={false}
               placeholder="Will be auto-filled from pincode"
+              placeholderTextColor="#6B7280"
             />
           </StyledView>
         </StyledView>
