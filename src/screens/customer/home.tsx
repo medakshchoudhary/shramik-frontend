@@ -119,7 +119,6 @@ const CustomerHome: React.FC<Props> = ({route, navigation}) => {
           ios: 'voice_note.m4a',
           android: `${RNFS.DocumentDirectoryPath}/voice_note.mp4`,
         });
-        
         if (!path) {
           showToast.error('Could not determine recording path');
           return;

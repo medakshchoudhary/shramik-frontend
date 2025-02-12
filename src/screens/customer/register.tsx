@@ -3,142 +3,134 @@ import {
   View,
   Text as RNText,
   TextInput as RNTextInput,
-  TouchableOpacity,
   ScrollView,
-  Keyboard,
+  TouchableOpacity,
 } from 'react-native';
 import {styled} from 'nativewind';
-import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {showToast} from '../../utils/toast';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 const StyledView = styled(View);
 const StyledText = styled(RNText);
 const StyledTextInput = styled(RNTextInput);
-const StyledTouchableOpacity = styled(TouchableOpacity);
 const StyledScrollView = styled(ScrollView);
+const StyledTouchableOpacity = styled(TouchableOpacity);
 
 type Props = NativeStackScreenProps<any, 'CustomerRegistration'>;
 
-const CustomerRegistration: React.FC<Props> = ({navigation}) => {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    address: '',
-    pincode: '',
-  });
+const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
+  const [fullName, setFullName] = useState('');
+  const [address, setAddress] = useState('');
+  const [pincode, setPincode] = useState('');
+
+  const validateForm = () => {
+    if (!fullName.trim()) {
+      showToast.error('Please enter your full name');
+      return false;
+    }
+    if (!address.trim()) {
+      showToast.error('Please enter your address');
+      return false;
+    }
+    if (!pincode.trim() || pincode.length !== 6) {
+      showToast.error('Please enter a valid 6-digit pincode');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    try {
+      // TODO: Implement API call to register customer
+      showToast.success('Registration successful');
+      navigation.replace('CustomerHome', {
+        fullName,
+        address,
+        pincode,
+        phoneNumber: route.params?.phoneNumber,
+      });
+    } catch (error) {
+      showToast.error('Registration failed');
+    }
+  };
 
   const isFormValid = () => {
     return (
-      formData.fullName.trim().length > 0 &&
-      formData.address.trim().length > 0 &&
-      formData.pincode.length === 6
+      fullName.trim() !== '' &&
+      address.trim() !== '' &&
+      pincode.trim().length === 6
     );
   };
 
-  const handleRegister = async () => {
-    if (!isFormValid()) {
-      showToast.error('Please fill all fields correctly');
-      return;
-    }
-
-    try {
-      Keyboard.dismiss();  // Dismiss keyboard immediately
-      // TODO: Implement API call to register customer
-      showToast.success('Registration successful!');
-      // Use setTimeout to ensure toast is visible before navigation
-      setTimeout(() => {
-        navigation.replace('CustomerHome', {
-          fullName: formData.fullName,
-          address: formData.address,
-          pincode: formData.pincode,
-        });
-      }, 100);
-    } catch (error) {
-      showToast.error('Registration failed. Please try again.');
-    }
-  };
-
   return (
-    <StyledView className="flex-1 bg-white">
-      {/* Header */}
-      <StyledView className="border-b border-gray-200">
-        <StyledView className="px-6 py-6">
-          <StyledText className="text-[28px] font-merriweather-bold">
-            Enter Your Details
+    <StyledScrollView className="flex-1 bg-white">
+      <StyledView className="p-6">
+        <StyledText className="text-2xl font-merriweather-bold mb-6">
+          Customer Registration
+        </StyledText>
+
+        {/* Required fields note */}
+        <StyledText className="text-sm text-gray-500 mb-4">
+          Fields marked with * are required
+        </StyledText>
+
+        {/* Name Input */}
+        <StyledView className="mb-4">
+          <StyledText className="text-sm font-merriweather-medium mb-1">
+            Full Name <StyledText className="text-red-500">*</StyledText>
           </StyledText>
+          <StyledTextInput
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+            placeholder="Enter your full name"
+            value={fullName}
+            onChangeText={setFullName}
+          />
         </StyledView>
+
+        {/* Address Input */}
+        <StyledView className="mb-4">
+          <StyledText className="text-sm font-merriweather-medium mb-1">
+            Address <StyledText className="text-red-500">*</StyledText>
+          </StyledText>
+          <StyledTextInput
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+            placeholder="Enter your address"
+            value={address}
+            onChangeText={setAddress}
+            multiline
+          />
+        </StyledView>
+
+        {/* Pincode Input */}
+        <StyledView className="mb-6">
+          <StyledText className="text-sm font-merriweather-medium mb-1">
+            Pin Code <StyledText className="text-red-500">*</StyledText>
+          </StyledText>
+          <StyledTextInput
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+            placeholder="Enter your pin code"
+            value={pincode}
+            onChangeText={setPincode}
+            keyboardType="numeric"
+            maxLength={6}
+          />
+        </StyledView>
+
+        {/* Submit Button */}
+        <StyledTouchableOpacity
+          className={`rounded-lg p-4 ${
+            isFormValid() ? 'bg-blue-500' : 'bg-gray-300'
+          }`}
+          onPress={handleSubmit}
+          disabled={!isFormValid()}>
+          <StyledText className="text-white text-center font-merriweather-bold">
+            Register
+          </StyledText>
+        </StyledTouchableOpacity>
       </StyledView>
-
-      <StyledScrollView className="flex-1 px-6">
-        <StyledView className="space-y-4 pt-6">
-          {/* Full Name */}
-          <StyledView>
-            <StyledText className="text-gray-600 font-merriweather-regular mb-2">
-              Full Name
-            </StyledText>
-            <StyledTextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-lg font-merriweather-regular"
-              value={formData.fullName}
-              onChangeText={(text) => setFormData({...formData, fullName: text})}
-              placeholder="Enter your full name"
-              autoFocus={true}
-            />
-          </StyledView>
-
-          {/* Address */}
-          <StyledView>
-            <StyledText className="text-gray-600 font-merriweather-regular mb-2">
-              Address
-            </StyledText>
-            <StyledTextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-lg font-merriweather-regular"
-              value={formData.address}
-              onChangeText={(text) => setFormData({...formData, address: text})}
-              placeholder="Enter your address"
-              multiline
-              numberOfLines={3}
-            />
-          </StyledView>
-
-          {/* Pincode */}
-          <StyledView>
-            <StyledText className="text-gray-600 font-merriweather-regular mb-2">
-              Pincode
-            </StyledText>
-            <StyledTextInput
-              className="border border-gray-300 rounded-lg px-4 py-3 text-lg font-merriweather-regular"
-              value={formData.pincode}
-              onChangeText={(text) => {
-                const cleaned = text.replace(/[^0-9]/g, '');
-                setFormData({...formData, pincode: cleaned});
-              }}
-              placeholder="Enter pincode"
-              keyboardType="number-pad"
-              maxLength={6}
-            />
-          </StyledView>
-
-          {/* Register Button */}
-          <StyledTouchableOpacity
-            className={`w-full rounded-lg py-4 items-center mt-8 ${
-              isFormValid() ? 'bg-blue-600' : 'bg-gray-200'
-            }`}
-            onPress={handleRegister}
-            disabled={!isFormValid()}
-          >
-            <StyledText
-              className={`text-xl font-merriweather-medium ${
-                isFormValid() ? 'text-white' : 'text-gray-600'
-              }`}
-            >
-              Finish
-            </StyledText>
-          </StyledTouchableOpacity>
-        </StyledView>
-
-        {/* Bottom Spacing */}
-        <StyledView className="h-10" />
-      </StyledScrollView>
-    </StyledView>
+    </StyledScrollView>
   );
 };
 

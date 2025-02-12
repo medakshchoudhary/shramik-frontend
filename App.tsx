@@ -14,6 +14,10 @@ import CustomerHome from './src/screens/customer/home';
 import CustomerHistory from './src/screens/customer/history';
 import CustomerProfile from './src/screens/customer/profile';
 import {usePermissionRequester} from './src/components/PermissionRequester';
+import WorkerRegistration from './src/screens/worker/register';
+import WorkerHome from './src/screens/worker/home';
+import WorkerProfile from './src/screens/worker/profile';
+import TaskDetails from './src/screens/worker/TaskDetails';
 
 // Create custom components with default styling
 export const Text = (props: any) => (
@@ -125,6 +129,10 @@ function App(): React.JSX.Element {
             headerShown: false,
           }}
         />
+        <Stack.Screen name="WorkerRegistration" component={WorkerRegistration} />
+        <Stack.Screen name="WorkerHome" component={WorkerHome} />
+        <Stack.Screen name="WorkerProfile" component={WorkerProfile} />
+        <Stack.Screen name="TaskDetails" component={TaskDetails} />
       </Stack.Navigator>
       <Toast onShow={() => console.log('Toast shown')} />
     </NavigationContainer>

@@ -10,18 +10,15 @@ const StyledTouchableOpacity = styled(TouchableOpacity);
 
 type RoleSelectionProps = {
   navigation: NativeStackNavigationProp<any>;
+  route: any;
 };
 
-function RoleSelection({navigation}: RoleSelectionProps): React.JSX.Element {
-  const handleRoleSelection = (role: 'customer' | 'worker') => {
-    switch (role) {
-      case 'customer':
-        navigation.navigate('CustomerRegistration');
-        break;
-      case 'worker':
-        // TODO: Add worker registration later
-        showToast.info('Worker registration coming soon');
-        break;
+const RoleSelection: React.FC<RoleSelectionProps> = ({navigation, route}) => {
+  const handleRoleSelect = (role: string) => {
+    if (role === 'customer') {
+      navigation.navigate('CustomerRegistration', route.params);
+    } else if (role === 'worker') {
+      navigation.navigate('WorkerRegistration', route.params);
     }
   };
 
@@ -33,7 +30,7 @@ function RoleSelection({navigation}: RoleSelectionProps): React.JSX.Element {
       
       <StyledTouchableOpacity 
         className="w-full bg-blue-600 rounded-lg py-4 items-center mb-4"
-        onPress={() => handleRoleSelection('customer')}
+        onPress={() => handleRoleSelect('customer')}
       >
         <StyledText className="text-xl font-merriweather-medium text-white">
           Customer
@@ -42,7 +39,7 @@ function RoleSelection({navigation}: RoleSelectionProps): React.JSX.Element {
 
       <StyledTouchableOpacity 
         className="w-full bg-blue-600 rounded-lg py-4 items-center"
-        onPress={() => handleRoleSelection('worker')}
+        onPress={() => handleRoleSelect('worker')}
       >
         <StyledText className="text-xl font-merriweather-medium text-white">
           Worker
@@ -50,6 +47,6 @@ function RoleSelection({navigation}: RoleSelectionProps): React.JSX.Element {
       </StyledTouchableOpacity>
     </StyledView>
   );
-}
+};
 
 export default RoleSelection; 
