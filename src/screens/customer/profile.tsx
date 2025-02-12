@@ -49,16 +49,18 @@ const CustomerProfile: React.FC<Props> = ({route}) => {
               Address
             </StyledText>
             <StyledText className="text-lg font-merriweather-medium text-gray-900">
-              {route.params?.address || 'Not available'}
+              {route.params?.mainAddress || 'Not available'}
             </StyledText>
-          </StyledView>
-
-          <StyledView className="border-b border-gray-200 pb-4">
-            <StyledText className="text-sm font-merriweather-regular text-gray-500">
-              Pincode
+            {route.params?.locality && (
+              <StyledText className="text-lg font-merriweather-medium text-gray-900">
+                {route.params.locality}
+              </StyledText>
+            )}
+            <StyledText className="text-lg font-merriweather-medium text-gray-900">
+              {route.params?.district || 'Not available'}, {route.params?.state || 'Not available'}
             </StyledText>
             <StyledText className="text-lg font-merriweather-medium text-gray-900">
-              {route.params?.pincode || 'Not available'}
+              PIN: {route.params?.pincode || 'Not available'}
             </StyledText>
           </StyledView>
         </StyledView>

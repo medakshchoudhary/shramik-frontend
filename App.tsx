@@ -25,7 +25,11 @@ export const Text = (props: any) => (
 );
 
 export const TextInput = (props: any) => (
-  <RNTextInput {...props} style={[typography.default, props.style]} />
+  <RNTextInput 
+    {...props} 
+    style={[typography.default, props.style]}
+    placeholderTextColor="#111827" // Dark gray, almost black
+  />
 );
 
 // Create stack navigator

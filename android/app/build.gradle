@@ -118,4 +118,7 @@ dependencies {
     }
 
     implementation project(':react-native-fs')
+    implementation project(':react-native-vector-icons')
 }
+
+apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")

@@ -52,7 +52,18 @@ const WorkerProfile: React.FC<Props> = ({route}) => {
               Address
             </StyledText>
             <StyledText className="text-lg font-merriweather-medium text-gray-900">
-              {route.params?.address || 'Not available'}
+              {route.params?.mainAddress || 'Not available'}
+            </StyledText>
+            {route.params?.locality && (
+              <StyledText className="text-lg font-merriweather-medium text-gray-900">
+                {route.params.locality}
+              </StyledText>
+            )}
+            <StyledText className="text-lg font-merriweather-medium text-gray-900">
+              {route.params?.district || 'Not available'}, {route.params?.state || 'Not available'}
+            </StyledText>
+            <StyledText className="text-lg font-merriweather-medium text-gray-900">
+              PIN: {route.params?.pincode || 'Not available'}
             </StyledText>
           </StyledView>
 

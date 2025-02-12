@@ -3,18 +3,18 @@ import {
   View,
   Text as RNText,
   TextInput as RNTextInput,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
 } from 'react-native';
 import {styled} from 'nativewind';
 import DropDownPicker from 'react-native-dropdown-picker';
 import {showToast} from '../../utils/toast';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const StyledView = styled(View);
 const StyledText = styled(RNText);
 const StyledTextInput = styled(RNTextInput);
-const StyledScrollView = styled(ScrollView);
 const StyledTouchableOpacity = styled(TouchableOpacity);
 
 type Props = NativeStackScreenProps<any, 'WorkerRegistration'>;
@@ -37,9 +37,62 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
     {label: 'Electrician', value: 'electrician'},
     {label: 'Carpenter', value: 'carpenter'},
     {label: 'Gardener', value: 'gardener'},
+    {label: 'Painter', value: 'painter'},
+    {label: 'Mason', value: 'mason'},
+    {label: 'Welder', value: 'welder'},
+    {label: 'AC Technician', value: 'ac_tech'},
+    {label: 'TV Repair', value: 'tv_repair'},
     {label: 'Other', value: 'other'},
   ]);
   const [otherProfession, setOtherProfession] = useState('');
+
+  // Add search state and handlers for profession dropdown
+  const [professionSearch, setProfessionSearch] = useState('');
+
+  // Add these states after other state declarations
+  const [mainAddress, setMainAddress] = useState('');
+  const [locality, setLocality] = useState('');
+  const [district, setDistrict] = useState('');
+  const [state, setState] = useState('');
+
+  // Add this function to handle pincode changes
+  const handlePincodeChange = async (text: string) => {
+    // Only allow numbers
+    const cleaned = text.replace(/[^0-9]/g, '');
+    setPincode(cleaned);
+
+    if (cleaned.length === 6) {
+      try {
+        // TODO: Replace with actual API call
+        // For now using dummy data
+        const response = {
+          district: 'Mumbai',
+          state: 'Maharashtra'
+        };
+        setDistrict(response.district);
+        setState(response.state);
+      } catch (error) {
+        console.error('Error fetching location data:', error);
+        showToast.error('Error fetching location data');
+      }
+    } else {
+      setDistrict('');
+      setState('');
+    }
+  };
+
+  // Add validation for numeric fields
+  const handleWorkingSinceChange = (text: string) => {
+    // Only allow numbers
+    const cleaned = text.replace(/[^0-9]/g, '');
+    setWorkingSince(cleaned);
+  };
+
+  const handleAadhaarChange = (text: string) => {
+    // Only allow numbers
+    const cleaned = text.replace(/[^0-9]/g, '');
+    setAadhaar(cleaned);
+  };
 
   const validateForm = () => {
     if (!fullName.trim()) {
@@ -92,8 +145,10 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
   const isFormValid = () => {
     return (
       fullName.trim() !== '' &&
-      address.trim() !== '' &&
       pincode.trim().length === 6 &&
+      mainAddress.trim() !== '' &&
+      district !== '' &&
+      state !== '' &&
       profession !== null &&
       (profession !== 'other' || otherProfession.trim() !== '') &&
       workingSince.trim() !== '' &&
@@ -102,44 +157,35 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
     );
   };
 
-  return (
-    <StyledScrollView className="flex-1 bg-white">
-      <StyledView className="p-6">
-        <StyledText className="text-2xl font-merriweather-bold mb-6">
-          Worker Registration
+  const renderFormFields = () => (
+    <StyledView className="p-6">
+      <StyledText className="text-2xl font-merriweather-bold mb-6">
+        Worker Registration
+      </StyledText>
+
+      {/* Required fields note */}
+      <StyledText className="text-sm text-gray-500 mb-4">
+        Fields marked with * are required
+      </StyledText>
+
+      {/* Name Input */}
+      <StyledView className="mb-4">
+        <StyledText className="text-sm font-merriweather-medium mb-1">
+          Full Name <StyledText className="text-red-500">*</StyledText>
         </StyledText>
+        <StyledTextInput
+          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+          placeholder="Enter your full name"
+          value={fullName}
+          onChangeText={setFullName}
+        />
+      </StyledView>
 
-        {/* Required fields note */}
-        <StyledText className="text-sm text-gray-500 mb-4">
-          Fields marked with * are required
+      {/* Address Section */}
+      <StyledView className="mb-4">
+        <StyledText className="text-lg font-merriweather-bold mb-4">
+          Address Details
         </StyledText>
-
-        {/* Name Input */}
-        <StyledView className="mb-4">
-          <StyledText className="text-sm font-merriweather-medium mb-1">
-            Full Name <StyledText className="text-red-500">*</StyledText>
-          </StyledText>
-          <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
-            placeholder="Enter your full name"
-            value={fullName}
-            onChangeText={setFullName}
-          />
-        </StyledView>
-
-        {/* Address Input */}
-        <StyledView className="mb-4">
-          <StyledText className="text-sm font-merriweather-medium mb-1">
-            Address <StyledText className="text-red-500">*</StyledText>
-          </StyledText>
-          <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
-            placeholder="Enter your address"
-            value={address}
-            onChangeText={setAddress}
-            multiline
-          />
-        </StyledView>
 
         {/* Pincode Input */}
         <StyledView className="mb-4">
@@ -147,114 +193,229 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
             Pin Code <StyledText className="text-red-500">*</StyledText>
           </StyledText>
           <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
             placeholder="Enter your pin code"
             value={pincode}
-            onChangeText={setPincode}
+            onChangeText={handlePincodeChange}
             keyboardType="numeric"
             maxLength={6}
           />
         </StyledView>
 
-        {/* Profession Dropdown */}
-        <StyledView className="mb-4 z-50">
-          <StyledText className="text-sm font-merriweather-medium mb-1">
-            Profession <StyledText className="text-red-500">*</StyledText>
-          </StyledText>
-          <DropDownPicker
-            open={professionOpen}
-            value={profession}
-            items={professions}
-            setOpen={setProfessionOpen}
-            setValue={setProfession}
-            className="border border-gray-300 rounded-lg"
-            placeholder="Select your profession"
-          />
-        </StyledView>
-
-        {/* Other Profession Input */}
-        {profession === 'other' && (
-          <StyledView className="mb-4">
-            <StyledText className="text-sm font-merriweather-medium mb-1">
-              Specify Profession <StyledText className="text-red-500">*</StyledText>
-            </StyledText>
-            <StyledTextInput
-              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
-              placeholder="Enter your profession"
-              value={otherProfession}
-              onChangeText={setOtherProfession}
-            />
-          </StyledView>
-        )}
-
-        {/* Working Since Input */}
+        {/* Main Address Input */}
         <StyledView className="mb-4">
           <StyledText className="text-sm font-merriweather-medium mb-1">
-            Working Since <StyledText className="text-red-500">*</StyledText>
+            Main Address <StyledText className="text-red-500">*</StyledText>
           </StyledText>
           <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
-            placeholder="e.g., 2012 - Present"
-            value={workingSince}
-            onChangeText={setWorkingSince}
-          />
-        </StyledView>
-
-        {/* Qualifications Input */}
-        <StyledView className="mb-4">
-          <StyledText className="text-sm font-merriweather-medium mb-1">
-            Technical Qualifications
-          </StyledText>
-          <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
-            placeholder="Enter your qualifications (if any)"
-            value={qualifications}
-            onChangeText={setQualifications}
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+            placeholder="House/Flat No., Street Name"
+            value={mainAddress}
+            onChangeText={setMainAddress}
             multiline
           />
         </StyledView>
 
-        {/* UPI ID Input */}
+        {/* Locality Input */}
         <StyledView className="mb-4">
           <StyledText className="text-sm font-merriweather-medium mb-1">
-            UPI ID <StyledText className="text-red-500">*</StyledText>
+            Locality
           </StyledText>
           <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
-            placeholder="Enter UPI ID"
-            value={upiId}
-            onChangeText={setUpiId}
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+            placeholder="Area/Locality (Optional)"
+            value={locality}
+            onChangeText={setLocality}
           />
         </StyledView>
 
-        {/* Aadhaar Input */}
-        <StyledView className="mb-6">
+        {/* District Input (Auto-filled) */}
+        <StyledView className="mb-4">
           <StyledText className="text-sm font-merriweather-medium mb-1">
-            Aadhaar Number <StyledText className="text-red-500">*</StyledText>
+            District <StyledText className="text-red-500">*</StyledText>
           </StyledText>
           <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
-            placeholder="Enter Aadhaar Number"
-            value={aadhaar}
-            onChangeText={setAadhaar}
-            keyboardType="numeric"
-            maxLength={12}
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
+            value={district}
+            editable={false}
+            placeholder="Will be auto-filled from pincode"
           />
         </StyledView>
 
-        {/* Submit Button */}
-        <StyledTouchableOpacity
-          className={`rounded-lg p-4 ${
-            isFormValid() ? 'bg-blue-500' : 'bg-gray-300'
-          }`}
-          onPress={handleSubmit}
-          disabled={!isFormValid()}>
-          <StyledText className="text-white text-center font-merriweather-bold">
-            Register
+        {/* State Input (Auto-filled) */}
+        <StyledView className="mb-4">
+          <StyledText className="text-sm font-merriweather-medium mb-1">
+            State <StyledText className="text-red-500">*</StyledText>
           </StyledText>
-        </StyledTouchableOpacity>
+          <StyledTextInput
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
+            value={state}
+            editable={false}
+            placeholder="Will be auto-filled from pincode"
+          />
+        </StyledView>
       </StyledView>
-    </StyledScrollView>
+
+      {/* Profession Dropdown */}
+      <StyledView className="mb-4 z-50">
+        <StyledText className="text-sm font-merriweather-medium mb-1">
+          Profession <StyledText className="text-red-500">*</StyledText>
+        </StyledText>
+        <DropDownPicker
+          open={professionOpen}
+          value={profession}
+          items={professions}
+          setOpen={setProfessionOpen}
+          setValue={setProfession}
+          className="border border-gray-300 rounded-lg"
+          placeholder="Select your profession"
+          searchable={true}
+          searchPlaceholder="Search profession..."
+          searchTextInputProps={{
+            maxLength: 40,
+            autoCapitalize: 'none',
+          }}
+          searchTextInputStyle={{
+            borderWidth: 1,
+            borderColor: '#E5E7EB',
+            borderRadius: 8,
+            paddingHorizontal: 36,
+            paddingVertical: 8,
+            fontFamily: 'Merriweather-Regular',
+            fontSize: 14,
+            marginHorizontal: 12,
+            marginVertical: 8,
+            height: 40,
+          }}
+          searchContainerStyle={{
+            borderBottomColor: '#E5E7EB',
+            borderBottomWidth: 1,
+            padding: 0,
+          }}
+          ListEmptyComponent={() => (
+            <StyledText className="text-center py-4 text-gray-500 font-merriweather-regular">
+              No profession found
+            </StyledText>
+          )}
+          CustomInput={({style, ...props}) => (
+            <StyledView className="relative mx-3 my-2">
+              <Icon
+                name="search"
+                size={20}
+                color="#9CA3AF"
+                style={{
+                  position: 'absolute',
+                  left: 12,
+                  top: 10,
+                  zIndex: 1,
+                }}
+              />
+              <StyledTextInput
+                {...props}
+                style={[style, { paddingLeft: 36 }]}
+              />
+            </StyledView>
+          )}
+          listMode="SCROLLVIEW"
+          scrollViewProps={{
+            nestedScrollEnabled: true,
+          }}
+        />
+      </StyledView>
+
+      {/* Other Profession Input */}
+      {profession === 'other' && (
+        <StyledView className="mb-4">
+          <StyledText className="text-sm font-merriweather-medium mb-1">
+            Specify Profession <StyledText className="text-red-500">*</StyledText>
+          </StyledText>
+          <StyledTextInput
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+            placeholder="Enter your profession"
+            value={otherProfession}
+            onChangeText={setOtherProfession}
+          />
+        </StyledView>
+      )}
+
+      {/* Working Since Input */}
+      <StyledView className="mb-4">
+        <StyledText className="text-sm font-merriweather-medium mb-1">
+          Working Since <StyledText className="text-red-500">*</StyledText>
+        </StyledText>
+        <StyledTextInput
+          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+          placeholder="Enter years of experience (e.g., 5)"
+          value={workingSince}
+          onChangeText={handleWorkingSinceChange}
+          keyboardType="numeric"
+          maxLength={2} // Max 99 years
+        />
+      </StyledView>
+
+      {/* Qualifications Input */}
+      <StyledView className="mb-4">
+        <StyledText className="text-sm font-merriweather-medium mb-1">
+          Technical Qualifications
+        </StyledText>
+        <StyledTextInput
+          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+          placeholder="Enter your qualifications (if any)"
+          value={qualifications}
+          onChangeText={setQualifications}
+          multiline
+        />
+      </StyledView>
+
+      {/* UPI ID Input */}
+      <StyledView className="mb-4">
+        <StyledText className="text-sm font-merriweather-medium mb-1">
+          UPI ID <StyledText className="text-red-500">*</StyledText>
+        </StyledText>
+        <StyledTextInput
+          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+          placeholder="Enter UPI ID"
+          value={upiId}
+          onChangeText={setUpiId}
+        />
+      </StyledView>
+
+      {/* Aadhaar Input */}
+      <StyledView className="mb-6">
+        <StyledText className="text-sm font-merriweather-medium mb-1">
+          Aadhaar Number <StyledText className="text-red-500">*</StyledText>
+        </StyledText>
+        <StyledTextInput
+          className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
+          placeholder="Enter Aadhaar Number"
+          value={aadhaar}
+          onChangeText={handleAadhaarChange}
+          keyboardType="numeric"
+          maxLength={12}
+        />
+      </StyledView>
+
+      {/* Submit Button */}
+      <StyledTouchableOpacity
+        className={`rounded-lg p-4 ${
+          isFormValid() ? 'bg-blue-500' : 'bg-gray-300'
+        }`}
+        onPress={handleSubmit}
+        disabled={!isFormValid()}>
+        <StyledText className="text-white text-center font-merriweather-bold">
+          Register
+        </StyledText>
+      </StyledTouchableOpacity>
+    </StyledView>
+  );
+
+  return (
+    <FlatList
+      data={[{ key: 'form' }]}
+      renderItem={() => renderFormFields()}
+      className="flex-1 bg-white"
+      keyExtractor={item => item.key}
+    />
   );
 };
 

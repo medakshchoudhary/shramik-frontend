@@ -56,26 +56,26 @@ const WorkerHome: React.FC<Props> = ({route, navigation}) => {
           </StyledText>
 
           {/* Task Notification Card */}
-          <StyledView className="bg-white rounded-lg shadow-sm p-4 mb-4">
+          <StyledView className="bg-gray-50 rounded-lg shadow p-4 mb-4 border border-gray-200">
             <StyledView className="flex-row justify-between items-start">
               <StyledView className="flex-1">
-                <StyledText className="font-merriweather-bold text-lg">
+                <StyledText className="font-merriweather-bold text-lg text-gray-900">
                   John Doe
                 </StyledText>
-                <StyledText className="text-gray-600 font-merriweather-regular mt-1">
+                <StyledText className="text-gray-700 font-merriweather-regular mt-1">
                   Requirement of Plumbing for Pipe Fix
                 </StyledText>
-                <StyledText className="text-gray-500 font-merriweather-regular mt-1">
+                <StyledText className="text-gray-600 font-merriweather-regular mt-1">
                   Location: Andheri East
                 </StyledText>
               </StyledView>
               <StyledTouchableOpacity
-                className="bg-gray-100 rounded-lg px-4 py-2"
+                className="bg-white rounded-lg px-4 py-2 shadow-sm border border-gray-200"
                 onPress={() => navigation.navigate('TaskDetails', {
                   taskId: '123',
                   customerName: 'John Doe'
                 })}>
-                <StyledText className="font-merriweather-medium">
+                <StyledText className="font-merriweather-medium text-gray-700">
                   View
                 </StyledText>
               </StyledTouchableOpacity>
