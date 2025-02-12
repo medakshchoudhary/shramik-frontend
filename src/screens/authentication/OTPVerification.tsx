@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Keyboard,
   Platform,
+  TextInput,
 } from 'react-native';
 import {styled} from 'nativewind';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -28,14 +29,16 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [timer, setTimer] = useState(30);
   const inputRefs = useRef<Array<any>>([]);
-  const firstInput = useRef<any>(null);
+  const firstInputRef = useRef<TextInput>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     startTimer();
-    firstInput.current?.focus();
+    // Ensure keyboard shows up immediately
+    setTimeout(() => {
+      firstInputRef.current?.focus();
+    }, 100);
 
-    // Show toast message when screen mounts
     showToast.info(`OTP sent to +91 ${route.params.phoneNumber}`);
 
     return () => {
@@ -66,7 +69,6 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
 
   const handleOtpChange = (value: string, index: number) => {
     const newOtp = [...otp];
-    // Only allow numbers and auto-clean input
     const cleaned = value.replace(/[^0-9]/g, '');
     newOtp[index] = cleaned;
     setOtp(newOtp);
@@ -76,46 +78,51 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-verify when all digits are filled
-    if (cleaned) {
-      const fullOtp = [...newOtp].join('');
-      if (fullOtp.length === CELL_COUNT) {
-        Keyboard.dismiss();
-        handleVerifyOTP(fullOtp);
-      }
+    // Check if all digits are filled
+    const fullOtp = newOtp.join('');
+    if (fullOtp.length === CELL_COUNT) {
+      handleVerifyOTP(fullOtp);
     }
   };
 
   const handleKeyPress = (event: any, index: number) => {
-    if (event.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-      const newOtp = [...otp];
-      newOtp[index - 1] = '';
-      setOtp(newOtp);
+    if (event.nativeEvent.key === 'Backspace') {
+      if (!otp[index] && index > 0) {
+        // Move to previous input and clear it
+        const newOtp = [...otp];
+        newOtp[index - 1] = '';
+        setOtp(newOtp);
+        inputRefs.current[index - 1]?.focus();
+      }
     }
   };
 
+  const resetOTPInput = () => {
+    setOtp(Array(CELL_COUNT).fill(''));
+    setTimeout(() => {
+      firstInputRef.current?.focus();
+    }, 100);
+  };
+
   const handleVerifyOTP = async (enteredOTP: string) => {
-    if (isVerifying) return; // Prevent multiple verification attempts
+    if (isVerifying) return;
     setIsVerifying(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       
       if (enteredOTP === DEMO_OTP) {
-        showToast.success('Verification successful');
-        setTimeout(() => {
-          navigation.replace('RoleSelection');
-        }, 500);
+        showToast.success('OTP verified successfully');
+        navigation.replace('RoleSelection', {
+          phoneNumber: route.params?.phoneNumber,
+        });
       } else {
-        showToast.error('Invalid verification code');
-        setOtp(Array(CELL_COUNT).fill(''));
-        firstInput.current?.focus();
+        showToast.error('Invalid OTP');
+        resetOTPInput();
       }
     } catch (error) {
       showToast.error('Verification failed');
-      setOtp(Array(CELL_COUNT).fill(''));
-      firstInput.current?.focus();
+      resetOTPInput();
     } finally {
       setIsVerifying(false);
     }
@@ -126,13 +133,33 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
     
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      setOtp(Array(CELL_COUNT).fill(''));
-      firstInput.current?.focus();
-      startTimer(); // Restart timer
+      resetOTPInput();
+      startTimer();
       showToast.info('Verification code sent');
     } catch (error) {
       showToast.error('Failed to resend code');
     }
+  };
+
+  const renderCell = ({index}: {index: number}) => {
+    return (
+      <StyledTextInput
+        ref={(ref) => {
+          inputRefs.current[index] = ref;
+          if (index === 0) firstInputRef.current = ref;
+        }}
+        key={index}
+        className={`w-12 h-12 border-2 rounded-lg text-center text-2xl font-merriweather-bold
+          ${otp[index] ? 'border-blue-500' : 'border-gray-300'}`}
+        keyboardType="number-pad"
+        maxLength={1}
+        value={otp[index]}
+        onChangeText={(text) => handleOtpChange(text, index)}
+        onKeyPress={(e) => handleKeyPress(e, index)}
+        selectTextOnFocus={true}
+        editable={!isVerifying}
+      />
+    );
   };
 
   return (
@@ -156,35 +183,7 @@ const OTPVerification: React.FC<Props> = ({navigation, route}) => {
 
         {/* OTP Input */}
         <StyledView className="flex-row justify-between mb-6">
-          {Array(CELL_COUNT).fill(null).map((_, index) => (
-            <StyledTextInput
-              key={index}
-              ref={(ref) => {
-                inputRefs.current[index] = ref;
-                if (index === 0) firstInput.current = ref;
-              }}
-              className={`w-12 h-12 border rounded-lg text-center font-merriweather-bold
-                ${otp[index] ? 'border-blue-600 border-2' : 'border-gray-300'}`}
-              style={{
-                fontSize: 20,
-                lineHeight: Platform.OS === 'ios' ? 24 : 28,
-              }}
-              maxLength={1}
-              keyboardType="number-pad"
-              value={otp[index]}
-              onChangeText={(text) => handleOtpChange(text, index)}
-              onKeyPress={(e) => handleKeyPress(e, index)}
-              editable={!isVerifying}
-              caretHidden={false}
-              selectTextOnFocus={true}
-              autoComplete="off"
-              returnKeyType="next"
-              blurOnSubmit={false}
-              showSoftInputOnFocus={true}
-              autoFocus={index === 0}
-              textContentType="oneTimeCode"
-            />
-          ))}
+          {Array(CELL_COUNT).fill(null).map((_, index) => renderCell({index}))}
         </StyledView>
 
         {/* Resend Section */}
