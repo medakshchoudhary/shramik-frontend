@@ -27,21 +27,31 @@ const pincodeRecords: PincodeData[] = pincodeData.pincodes;
 
 export const getPincodeDetails = (pincode: string): PincodeResponse | null => {
   try {
-    // Find the matching pincode (convert input string to number for comparison)
-    const match = pincodeRecords.find(data => data.pincode === parseInt(pincode, 10));
+    // Find all matches for the pincode
+    const matches = pincodeRecords.filter(data => data.pincode === parseInt(pincode, 10));
     
-    if (!match) {
+    if (matches.length === 0) {
       console.log(`No match found for pincode: ${pincode}`);
       return null;
     }
 
-    // Return formatted response
+    // Group areas by district
+    const districtMap = matches.reduce((acc, curr) => {
+      if (!acc[curr.district]) {
+        acc[curr.district] = {
+          name: curr.district,
+          areas: []
+        };
+      }
+      // Remove "SO" suffix and trim whitespace
+      const cleanedOfficeName = curr.officename.replace(/\s+SO$/, '').trim();
+      acc[curr.district].areas.push(cleanedOfficeName);
+      return acc;
+    }, {} as Record<string, { name: string; areas: string[] }>);
+
     return {
-      statename: match.statename,
-      districts: [{
-        name: match.district,
-        areas: [match.officename] // Using officename as area since that's what we have
-      }]
+      statename: matches[0].statename,
+      districts: Object.values(districtMap)
     };
   } catch (error) {
     console.error('Error in getPincodeDetails:', error);
