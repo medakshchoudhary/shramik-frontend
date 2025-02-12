@@ -1,11 +1,10 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {
   View,
   Text as RNText,
   TouchableOpacity,
   TextInput as RNTextInput,
   Platform,
-  PermissionsAndroid,
   ScrollView,
 } from 'react-native';
 import {styled} from 'nativewind';
@@ -13,6 +12,9 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import {showToast} from '../../utils/toast';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import {PermissionsAndroid} from 'react-native';
+import {checkPermission} from '../../components/PermissionRequester';
+import RNFS from 'react-native-fs';
 
 
 const StyledView = styled(View);
@@ -81,38 +83,33 @@ const CustomerHome: React.FC<Props> = ({route, navigation}) => {
 
   // Add new states for audio
   const [isPlaying, setIsPlaying] = useState(false);
-
-  const audioRecorderPlayer = useRef(new AudioRecorderPlayer()).current;
   const [recordingPath, setRecordingPath] = useState<string | null>(null);
 
-  const checkMicrophonePermission = async () => {
-    try {
-      if (Platform.OS !== 'android') return true;
+  // Initialize AudioRecorderPlayer
+  const [audioRecorderPlayer] = useState(() => new AudioRecorderPlayer());
 
-      const result = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        {
-          title: 'Microphone Permission',
-          message: 'App needs access to your microphone to record audio messages',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        },
-      );
-      
-      return result === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (error) {
-      console.error('Permission check failed:', error);
-      return false;
-    }
-  };
+  // Add cleanup effect
+  useEffect(() => {
+    return () => {
+      // Cleanup when component unmounts
+      if (isRecording) {
+        audioRecorderPlayer.stopRecorder();
+      }
+      if (isPlaying) {
+        audioRecorderPlayer.stopPlayer();
+      }
+      audioRecorderPlayer.removePlayBackListener();
+    };
+  }, [audioRecorderPlayer, isRecording, isPlaying]);
 
   const handleRecordAudio = async () => {
     try {
-      const hasPermission = await checkMicrophonePermission();
+      // Check permissions before recording
+      const micPermission = await checkPermission(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO);
+      const storagePermission = await checkPermission(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
       
-      if (!hasPermission) {
-        showToast.error('Microphone permission is required for recording');
+      if (!micPermission || !storagePermission) {
+        showToast.error('Required permissions not granted. Please enable in settings.');
         return;
       }
 
@@ -120,17 +117,30 @@ const CustomerHome: React.FC<Props> = ({route, navigation}) => {
         // Start recording
         const path = Platform.select({
           ios: 'voice_note.m4a',
-          android: 'sdcard/voice_note.mp4',
-        }) || 'voice_note.mp4';
+          android: `${RNFS.DocumentDirectoryPath}/voice_note.mp4`,
+        });
         
+        if (!path) {
+          showToast.error('Could not determine recording path');
+          return;
+        }
+
         await audioRecorderPlayer.startRecorder(path);
         setRecordingPath(path);
         setIsRecording(true);
         showToast.info('Recording started...');
+
+        // Add recording finished listener
+        audioRecorderPlayer.addRecordBackListener((e) => {
+          console.log('Recording progress:', e);
+        });
       } else {
+        // Remove recording listener
+        audioRecorderPlayer.removeRecordBackListener();
+        
         // Stop recording
         const result = await audioRecorderPlayer.stopRecorder();
-        setRecordingPath(result || null);
+        setRecordingPath(result);
         setIsRecording(false);
         setHasAudioMessage(true);
         showToast.success('Audio recorded successfully');
@@ -139,29 +149,39 @@ const CustomerHome: React.FC<Props> = ({route, navigation}) => {
       console.error('Recording error:', error);
       showToast.error('Failed to record audio');
       setIsRecording(false);
+      // Cleanup on error
+      audioRecorderPlayer.removeRecordBackListener();
     }
   };
 
   const handlePlayAudio = async () => {
     try {
-      if (!recordingPath) return;
+      if (!recordingPath) {
+        showToast.error('No recording available to play');
+        return;
+      }
 
       if (!isPlaying) {
         await audioRecorderPlayer.startPlayer(recordingPath);
         setIsPlaying(true);
         
-        // Handle playback completion
-        audioRecorderPlayer.addPlayBackListener(() => {
-          setIsPlaying(false);
+        // Add playback finished listener
+        audioRecorderPlayer.addPlayBackListener((e) => {
+          if (e.currentPosition === e.duration) {
+            setIsPlaying(false);
+            audioRecorderPlayer.removePlayBackListener();
+          }
         });
       } else {
         await audioRecorderPlayer.stopPlayer();
+        audioRecorderPlayer.removePlayBackListener();
         setIsPlaying(false);
       }
     } catch (error) {
       console.error('Playback error:', error);
       showToast.error('Failed to play audio');
       setIsPlaying(false);
+      audioRecorderPlayer.removePlayBackListener();
     }
   };
 
@@ -169,10 +189,16 @@ const CustomerHome: React.FC<Props> = ({route, navigation}) => {
     try {
       if (isPlaying) {
         await audioRecorderPlayer.stopPlayer();
+        audioRecorderPlayer.removePlayBackListener();
+      }
+      if (isRecording) {
+        await audioRecorderPlayer.stopRecorder();
+        audioRecorderPlayer.removeRecordBackListener();
       }
       setRecordingPath(null);
       setHasAudioMessage(false);
       setIsPlaying(false);
+      setIsRecording(false);
     } catch (error) {
       console.error('Discard error:', error);
       showToast.error('Failed to discard audio');
@@ -197,6 +223,13 @@ const CustomerHome: React.FC<Props> = ({route, navigation}) => {
     }
 
     try {
+      // Check location permission before submitting request
+      const locationPermission = await checkPermission(PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION);
+      if (!locationPermission) {
+        showToast.error('Location permission is required to find nearby workers');
+        return;
+      }
+
       // TODO: Implement API call to create request
       showToast.success('Request created successfully');
       // Navigate to confirmation screen

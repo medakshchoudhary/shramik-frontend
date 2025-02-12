@@ -13,6 +13,7 @@ import CustomerRegistration from './src/screens/customer/register';
 import CustomerHome from './src/screens/customer/home';
 import CustomerHistory from './src/screens/customer/history';
 import CustomerProfile from './src/screens/customer/profile';
+import {usePermissionRequester} from './src/components/PermissionRequester';
 
 // Create custom components with default styling
 export const Text = (props: any) => (
@@ -42,6 +43,8 @@ function HomeScreen(): React.JSX.Element {
 }
 
 function App(): React.JSX.Element {
+  usePermissionRequester();
+
   console.log('App rendering');
 
   return (

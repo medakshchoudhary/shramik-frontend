@@ -1,11 +1,10 @@
 import React from 'react';
-import {View, Text as RNText, TouchableOpacity} from 'react-native';
+import {View, Text as RNText} from 'react-native';
 import {styled} from 'nativewind';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 
 const StyledView = styled(View);
 const StyledText = styled(RNText);
-const StyledTouchableOpacity = styled(TouchableOpacity);
 
 type Props = NativeStackScreenProps<any, 'CustomerProfile'>;
 

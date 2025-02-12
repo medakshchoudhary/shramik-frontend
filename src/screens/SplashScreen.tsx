@@ -4,6 +4,7 @@ import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-nativ
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {styled} from 'nativewind';
 import {showToast} from '../utils/toast';
+import {checkAndRequestPermissions, getMissingPermissions} from '../utils/permissions';
 
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -13,54 +14,12 @@ type Props = NativeStackScreenProps<any, 'Splash'>;
 
 const SplashScreen: React.FC<Props> = ({navigation}) => {
   useEffect(() => {
-    const requestPermissions = async () => {
-      if (Platform.OS === 'android') {
-        try {
-          const permissions = [
-            {
-              type: PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-              message: 'Microphone access is needed for voice notes',
-            },
-            {
-              type: PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-              message: 'Storage access is needed to save recordings',
-            },
-            {
-              type: PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-              message: 'Storage access is needed to play recordings',
-            },
-          ];
+    // Simply navigate after delay
+    const timer = setTimeout(() => {
+      navigation.replace('Login');
+    }, 2000);
 
-          for (const permission of permissions) {
-            const granted = await PermissionsAndroid.request(
-              permission.type,
-              {
-                title: 'Permission Required',
-                message: permission.message,
-                buttonNeutral: 'Ask Me Later',
-                buttonNegative: 'Cancel',
-                buttonPositive: 'OK',
-              },
-            );
-
-            if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-              showToast.error(`${permission.message}. Please enable in settings.`);
-            }
-          }
-        } catch (err) {
-          console.warn(err);
-        }
-      }
-    };
-
-    const initializeApp = async () => {
-      await requestPermissions();
-      setTimeout(() => {
-        navigation.replace('Login');
-      }, 2000);
-    };
-
-    initializeApp();
+    return () => clearTimeout(timer);
   }, [navigation]);
 
   return (
