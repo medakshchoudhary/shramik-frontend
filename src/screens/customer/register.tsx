@@ -219,6 +219,48 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
             />
           </StyledView>
 
+          {/* State Input (Auto-filled) */}
+          <StyledView className="mb-4">
+            <StyledText className="text-sm font-merriweather-medium mb-1">
+              State <StyledText className="text-red-500">*</StyledText>
+            </StyledText>
+            <StyledTextInput
+              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
+              value={state}
+              editable={false}
+              placeholder="Will be auto-filled from pincode"
+              placeholderTextColor="#6B7280"
+            />
+          </StyledView>
+
+          {/* District Input */}
+          <StyledView className="mb-4 z-50">
+            <StyledText className="text-sm font-merriweather-medium mb-1">
+              District <StyledText className="text-red-500">*</StyledText>
+            </StyledText>
+            <DropDownPicker
+              open={districtOpen}
+              value={district}
+              items={availableDistricts}
+              setOpen={setDistrictOpen}
+              setValue={handleDistrictChange}
+              placeholder="Select district"
+              placeholderStyle={{
+                color: '#6B7280',
+                fontFamily: 'Merriweather-Regular'
+              }}
+              textStyle={{
+                color: '#111827',
+                fontFamily: 'Merriweather-Regular'
+              }}
+              style={{
+                borderColor: '#D1D5DB',
+                minHeight: 48
+              }}
+              zIndex={3000}
+            />
+          </StyledView>
+
           {/* Locality Input */}
           <StyledView className="mb-4 z-40">
             <StyledText className="text-sm font-merriweather-medium mb-1">
@@ -255,48 +297,6 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
                 placeholderTextColor="#6B7280"
               />
             )}
-          </StyledView>
-
-          {/* District Input */}
-          <StyledView className="mb-4 z-50">
-            <StyledText className="text-sm font-merriweather-medium mb-1">
-              District <StyledText className="text-red-500">*</StyledText>
-            </StyledText>
-            <DropDownPicker
-              open={districtOpen}
-              value={district}
-              items={availableDistricts}
-              setOpen={setDistrictOpen}
-              setValue={handleDistrictChange}
-              placeholder="Select district"
-              placeholderStyle={{
-                color: '#6B7280',
-                fontFamily: 'Merriweather-Regular'
-              }}
-              textStyle={{
-                color: '#111827',
-                fontFamily: 'Merriweather-Regular'
-              }}
-              style={{
-                borderColor: '#D1D5DB',
-                minHeight: 48
-              }}
-              zIndex={3000}
-            />
-          </StyledView>
-
-          {/* State Input (Auto-filled) */}
-          <StyledView className="mb-4">
-            <StyledText className="text-sm font-merriweather-medium mb-1">
-              State <StyledText className="text-red-500">*</StyledText>
-            </StyledText>
-            <StyledTextInput
-              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
-              value={state}
-              editable={false}
-              placeholder="Will be auto-filled from pincode"
-              placeholderTextColor="#6B7280"
-            />
           </StyledView>
         </StyledView>
 
