@@ -101,7 +101,7 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
     const data = getPincodeDetails(cleaned);
 
     if (data) {
-      setState(data.state);
+      setState(data.statename);
       
       // Map districts to dropdown format
       const districtOptions = data.districts.map(d => ({
@@ -250,7 +250,7 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
             onChangeText={handlePincodeChange}
             keyboardType="numeric"
             maxLength={6}
-          />
+            />
         </StyledView>
 
         {/* Main Address Input */}
@@ -261,10 +261,11 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
           <StyledTextInput
             className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
             placeholder="House/Flat No., Street Name"
+            placeholderTextColor="#6B7280"
             value={mainAddress}
             onChangeText={setMainAddress}
             multiline
-          />
+            />
         </StyledView>
 
         {/* Locality Input */}
@@ -275,9 +276,10 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
           <StyledTextInput
             className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
             placeholder="Area/Locality (Optional)"
+            placeholderTextColor="#6B7280"
             value={locality}
             onChangeText={setLocality}
-          />
+            />
         </StyledView>
 
         {/* District Input (Auto-filled) */}
@@ -287,41 +289,41 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
           </StyledText>
           {availableDistricts.length > 1 ? (
             <DropDownPicker
-              open={districtOpen}
-              value={district}
-              items={availableDistricts}
-              setOpen={setDistrictOpen}
-              setValue={setDistrict}
-              placeholder="Select district"
-              style={{
-                borderColor: '#D1D5DB',
-                minHeight: 48,
-                borderWidth: 1,
-                borderRadius: 8
-              }}
-              placeholderStyle={{
-                color: '#6B7280',
-                fontFamily: 'Merriweather-Regular'
-              }}
-              textStyle={{
-                color: '#111827',
-                fontFamily: 'Merriweather-Regular'
-              }}
-              listMode="MODAL"
-              modalProps={{
-                animationType: "fade"
-              }}
-              modalTitle="Select District"
+            open={districtOpen}
+            value={district}
+            items={availableDistricts}
+            setOpen={setDistrictOpen}
+            setValue={setDistrict}
+            placeholder="Select district"
+            style={{
+              borderColor: '#D1D5DB',
+              minHeight: 48,
+              borderWidth: 1,
+              borderRadius: 8
+            }}
+            placeholderStyle={{
+              color: '#6B7280',
+              fontFamily: 'Merriweather-Regular'
+            }}
+            textStyle={{
+              color: '#111827',
+              fontFamily: 'Merriweather-Regular'
+            }}
+            listMode="MODAL"
+            modalProps={{
+              animationType: "fade"
+            }}
+            modalTitle="Select District"
             />
           ) : (
             <StyledTextInput
-              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
               value={district}
               editable={false}
               placeholder="Will be auto-filled from pincode"
               placeholderTextColor="#6B7280"
-            />
-          )}
+              />
+            )}
         </StyledView>
 
         {/* State Input (Auto-filled) */}
@@ -334,6 +336,7 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
             value={state}
             editable={false}
             placeholder="Will be auto-filled from pincode"
+            placeholderTextColor="#6B7280"
           />
         </StyledView>
       </StyledView>
