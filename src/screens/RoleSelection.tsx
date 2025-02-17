@@ -26,6 +26,9 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({navigation, route}) => {
         if (!testData) {
           throw new Error('Failed to load location data');
         }
+      } else if (role === 'customer') {
+        // Add a small delay for customer to show loading state
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       navigation.navigate(

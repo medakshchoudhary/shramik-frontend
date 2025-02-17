@@ -5,6 +5,7 @@ import {
   TextInput as RNTextInput,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import {styled} from 'nativewind';
 import {showToast} from '../../utils/toast';
@@ -31,6 +32,8 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
   const [availableDistricts, setAvailableDistricts] = useState<{label: string; value: string; areas: string[]}[]>([]);
   const [localityOpen, setLocalityOpen] = useState(false);
   const [availableLocalities, setAvailableLocalities] = useState<{label: string; value: string}[]>([]);
+  const [isPincodeLoading, setIsPincodeLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
     if (!fullName.trim()) {
@@ -52,11 +55,61 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
     return true;
   };
 
+  const handlePincodeChange = async (text: string) => {
+    const cleaned = text.replace(/[^0-9]/g, '');
+    setPincode(cleaned);
+
+    if (cleaned.length === 6) {
+      setIsPincodeLoading(true);
+      try {
+        const data = getPincodeDetails(cleaned);
+        if (data) {
+          setState(data.statename);
+          
+          const districtOptions = data.districts.map(d => ({
+            label: d.name,
+            value: d.name,
+            areas: d.areas
+          }));
+
+          setAvailableDistricts(districtOptions);
+          
+          if (districtOptions.length === 1) {
+            setDistrict(districtOptions[0].value);
+            const localityOptions = districtOptions[0].areas.map(area => ({
+              label: area,
+              value: area
+            }));
+            setAvailableLocalities(localityOptions);
+            
+            if (localityOptions.length === 1) {
+              setLocality(localityOptions[0].value);
+            }
+          } else {
+            setDistrict('');
+            setLocality('');
+            setAvailableLocalities([]);
+          }
+        } else {
+          showToast.error('Pincode not found in our database');
+          setState('');
+          setDistrict('');
+          setLocality('');
+          setAvailableDistricts([]);
+          setAvailableLocalities([]);
+        }
+      } finally {
+        setIsPincodeLoading(false);
+      }
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
+    setIsSubmitting(true);
     try {
-      // TODO: Implement API call to register customer
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       showToast.success('Registration successful');
       navigation.replace('CustomerHome', {
         fullName,
@@ -69,56 +122,8 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
       });
     } catch (error) {
       showToast.error('Registration failed');
-    }
-  };
-
-  const handlePincodeChange = (text: string) => {
-    const cleaned = text.replace(/[^0-9]/g, '');
-    setPincode(cleaned);
-
-    if (cleaned.length === 6) {
-      const data = getPincodeDetails(cleaned);
-      if (data) {
-        setState(data.statename);
-        
-        // Map districts to dropdown format
-        const districtOptions = data.districts.map(d => ({
-          label: d.name,
-          value: d.name,
-          areas: d.areas
-        }));
-
-        setAvailableDistricts(districtOptions);
-        
-        // If only one district, select it automatically
-        if (districtOptions.length === 1) {
-          setDistrict(districtOptions[0].value);
-          
-          // Handle localities for single district
-          const localityOptions = districtOptions[0].areas.map(area => ({
-            label: area,
-            value: area
-          }));
-          setAvailableLocalities(localityOptions);
-          
-          // If only one locality, select it automatically
-          if (localityOptions.length === 1) {
-            setLocality(localityOptions[0].value);
-          }
-        } else {
-          // Multiple districts - clear selections
-          setDistrict('');
-          setLocality('');
-          setAvailableLocalities([]);
-        }
-      } else {
-        showToast.error('Pincode not found in our database');
-        setState('');
-        setDistrict('');
-        setLocality('');
-        setAvailableDistricts([]);
-        setAvailableLocalities([]);
-      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -157,7 +162,10 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
   };
 
   return (
-    <StyledScrollView className="flex-1 bg-white">
+    <StyledScrollView 
+      className="flex-1 bg-white"
+      keyboardShouldPersistTaps="handled"
+    >
       <StyledView className="p-6">
         <StyledText className="text-2xl font-merriweather-bold mb-6">
           Customer Registration
@@ -188,20 +196,28 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
             Address Details
           </StyledText>
 
-          {/* Pincode Input */}
+          {/* Pincode Input with Loading Indicator */}
           <StyledView className="mb-4">
             <StyledText className="text-sm font-merriweather-medium mb-1">
               Pin Code <StyledText className="text-red-500">*</StyledText>
             </StyledText>
-            <StyledTextInput
-              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
-              placeholder="Enter your pin code"
-              placeholderTextColor="#6B7280"
-              value={pincode}
-              onChangeText={handlePincodeChange}
-              keyboardType="numeric"
-              maxLength={6}
-            />
+            <StyledView className="relative">
+              <StyledTextInput
+                className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+                placeholder="Enter your pin code"
+                placeholderTextColor="#6B7280"
+                value={pincode}
+                onChangeText={handlePincodeChange}
+                keyboardType="numeric"
+                maxLength={6}
+                editable={!isPincodeLoading}
+              />
+              {isPincodeLoading && (
+                <StyledView className="absolute right-3 top-3">
+                  <ActivityIndicator color="#4B5563" />
+                </StyledView>
+              )}
+            </StyledView>
           </StyledView>
 
           {/* Main Address Input */}
@@ -300,16 +316,21 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
           </StyledView>
         </StyledView>
 
-        {/* Submit Button */}
+        {/* Submit Button with Loading State */}
         <StyledTouchableOpacity
           className={`rounded-lg p-4 ${
             isFormValid() ? 'bg-blue-500' : 'bg-gray-300'
           }`}
           onPress={handleSubmit}
-          disabled={!isFormValid()}>
-          <StyledText className="text-white text-center font-merriweather-bold">
-            Register
-          </StyledText>
+          disabled={!isFormValid() || isSubmitting}>
+          <StyledView className="flex-row items-center justify-center">
+            <StyledText className="text-white text-center font-merriweather-bold">
+              Register
+            </StyledText>
+            {isSubmitting && (
+              <ActivityIndicator color="white" style={{marginLeft: 8}} />
+            )}
+          </StyledView>
         </StyledTouchableOpacity>
       </StyledView>
     </StyledScrollView>
