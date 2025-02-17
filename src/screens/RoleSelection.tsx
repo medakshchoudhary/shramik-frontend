@@ -1,8 +1,8 @@
-import React from 'react';
-import {View, Text as RNText, TouchableOpacity} from 'react-native';
+import React, {useState} from 'react';
+import {View, Text as RNText, TouchableOpacity, ActivityIndicator} from 'react-native';
 import {styled} from 'nativewind';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {showToast} from '../utils/toast';
+import {getPincodeDetails} from '../data/pincodes';
 
 const StyledView = styled(View);
 const StyledText = styled(RNText);
@@ -14,11 +14,28 @@ type RoleSelectionProps = {
 };
 
 const RoleSelection: React.FC<RoleSelectionProps> = ({navigation, route}) => {
-  const handleRoleSelect = (role: string) => {
-    if (role === 'customer') {
-      navigation.navigate('CustomerRegistration', route.params);
-    } else if (role === 'worker') {
-      navigation.navigate('WorkerRegistration', route.params);
+  const [isLoading, setIsLoading] = useState<string | null>(null);
+
+  const handleRoleSelect = async (role: string) => {
+    setIsLoading(role);
+    try {
+      if (role === 'worker') {
+        // Pre-load pincode data for worker registration
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate data loading
+        const testData = getPincodeDetails('400001');
+        if (!testData) {
+          throw new Error('Failed to load location data');
+        }
+      }
+      
+      navigation.navigate(
+        role === 'customer' ? 'CustomerRegistration' : 'WorkerRegistration',
+        route.params
+      );
+    } catch (error) {
+      console.error('Role selection error:', error);
+    } finally {
+      setIsLoading(null);
     }
   };
 
@@ -28,22 +45,36 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({navigation, route}) => {
         Select Your Role
       </StyledText>
       
+      {/* Customer Button */}
       <StyledTouchableOpacity 
-        className="w-full bg-blue-600 rounded-lg py-4 items-center mb-4"
+        className="w-full bg-blue-600 rounded-lg py-4 mb-4"
         onPress={() => handleRoleSelect('customer')}
+        disabled={isLoading !== null}
       >
-        <StyledText className="text-xl font-merriweather-medium text-white">
-          Customer
-        </StyledText>
+        <StyledView className="flex-row items-center justify-center px-4">
+          <StyledText className="text-xl font-merriweather-bold text-white">
+            Customer
+          </StyledText>
+          {isLoading === 'customer' && (
+            <ActivityIndicator color="white" style={{marginLeft: 8}} />
+          )}
+        </StyledView>
       </StyledTouchableOpacity>
 
+      {/* Worker Button */}
       <StyledTouchableOpacity 
-        className="w-full bg-blue-600 rounded-lg py-4 items-center"
+        className="w-full bg-blue-600 rounded-lg py-4"
         onPress={() => handleRoleSelect('worker')}
+        disabled={isLoading !== null}
       >
-        <StyledText className="text-xl font-merriweather-medium text-white">
-          Worker
-        </StyledText>
+        <StyledView className="flex-row items-center justify-center px-4">
+          <StyledText className="text-xl font-merriweather-bold text-white">
+            Worker
+          </StyledText>
+          {isLoading === 'worker' && (
+            <ActivityIndicator color="white" style={{marginLeft: 8}} />
+          )}
+        </StyledView>
       </StyledTouchableOpacity>
     </StyledView>
   );
