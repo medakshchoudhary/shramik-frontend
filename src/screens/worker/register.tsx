@@ -56,6 +56,9 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
   const [districtOpen, setDistrictOpen] = useState(false);
   const [availableDistricts, setAvailableDistricts] = useState<{label: string; value: string}[]>([]);
 
+  // Add state for pincode loading
+  const [isPincodeLoading, setIsPincodeLoading] = useState(false);
+
   useEffect(() => {
     // Log available pincodes on mount
     console.log('Available pincode data:', getPincodeDetails(pincode));
@@ -82,52 +85,44 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
     const cleaned = text.replace(/[^0-9]/g, '');
     setPincode(cleaned);
 
-    // Clear fields when pincode is being edited
-    if (cleaned.length !== 6) {
-      setState('');
-      setDistrict('');
-      setLocality('');
-      setAvailableDistricts([]);
-      return;
-    }
+    if (cleaned.length === 6) {
+      setIsPincodeLoading(true);
+      try {
+        const data = getPincodeDetails(cleaned);
+        if (data) {
+          setState(data.statename); // Directly set state name
+          
+          const districtOptions = data.districts.map(d => ({
+            label: d.name,
+            value: d.name,
+            areas: d.areas
+          }));
 
-    // Validate pincode format
-    if (!isValidPincode(cleaned)) {
-      showToast.error('Invalid pincode format');
-      return;
-    }
-
-    // Get pincode details
-    const data = getPincodeDetails(cleaned);
-
-    if (data) {
-      setState(data.statename);
-      
-      // Map districts to dropdown format
-      const districtOptions = data.districts.map(d => ({
-        label: d.name,
-        value: d.name,
-        areas: d.areas
-      }));
-
-      setAvailableDistricts(districtOptions);
-      
-      // If only one district, select it automatically
-      if (districtOptions.length === 1) {
-        setDistrict(districtOptions[0].value);
-        
-        // If district has areas, show first one as suggestion
-        if (districtOptions[0].areas.length > 0) {
-          setLocality(districtOptions[0].areas[0]);
+          setAvailableDistricts(districtOptions);
+          
+          if (districtOptions.length === 1) {
+            setDistrict(districtOptions[0].value);
+            if (districtOptions[0].areas.length > 0) {
+              setLocality(districtOptions[0].areas[0]);
+            }
+          }
+        } else {
+          showToast.error('Pincode not found in our database');
+          resetLocationFields();
         }
+      } finally {
+        setIsPincodeLoading(false);
       }
     } else {
-      showToast.error('Pincode not found in our database');
-      setState('');
-      setDistrict('');
-      setLocality('');
-      setAvailableDistricts([]);
+      resetLocationFields();
     }
+  };
+
+  const resetLocationFields = () => {
+    setState('');
+    setDistrict('');
+    setLocality('');
+    setAvailableDistricts([]);
   };
 
   // Add validation for numeric fields
@@ -268,65 +263,7 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
             />
         </StyledView>
 
-        {/* Locality Input */}
-        <StyledView className="mb-4">
-          <StyledText className="text-sm font-merriweather-medium mb-1">
-            Locality
-          </StyledText>
-          <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular placeholder:text-gray-900"
-            placeholder="Area/Locality (Optional)"
-            placeholderTextColor="#6B7280"
-            value={locality}
-            onChangeText={setLocality}
-            />
-        </StyledView>
-
-        {/* District Input (Auto-filled) */}
-        <StyledView className="mb-4 z-40">
-          <StyledText className="text-sm font-merriweather-medium mb-1">
-            District <StyledText className="text-red-500">*</StyledText>
-          </StyledText>
-          {availableDistricts.length > 1 ? (
-            <DropDownPicker
-            open={districtOpen}
-            value={district}
-            items={availableDistricts}
-            setOpen={setDistrictOpen}
-            setValue={setDistrict}
-            placeholder="Select district"
-            style={{
-              borderColor: '#D1D5DB',
-              minHeight: 48,
-              borderWidth: 1,
-              borderRadius: 8
-            }}
-            placeholderStyle={{
-              color: '#6B7280',
-              fontFamily: 'Merriweather-Regular'
-            }}
-            textStyle={{
-              color: '#111827',
-              fontFamily: 'Merriweather-Regular'
-            }}
-            listMode="MODAL"
-            modalProps={{
-              animationType: "fade"
-            }}
-            modalTitle="Select District"
-            />
-          ) : (
-            <StyledTextInput
-            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
-              value={district}
-              editable={false}
-              placeholder="Will be auto-filled from pincode"
-              placeholderTextColor="#6B7280"
-              />
-            )}
-        </StyledView>
-
-        {/* State Input (Auto-filled) */}
+        {/* State Input */}
         <StyledView className="mb-4">
           <StyledText className="text-sm font-merriweather-medium mb-1">
             State <StyledText className="text-red-500">*</StyledText>
@@ -337,6 +274,47 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
             editable={false}
             placeholder="Will be auto-filled from pincode"
             placeholderTextColor="#6B7280"
+          />
+        </StyledView>
+
+        {/* District Dropdown */}
+        <StyledView className="mb-4 z-40">
+          <StyledText className="text-sm font-merriweather-medium mb-1">
+            District <StyledText className="text-red-500">*</StyledText>
+          </StyledText>
+          <DropDownPicker
+            open={districtOpen}
+            value={district}
+            items={availableDistricts}
+            setOpen={setDistrictOpen}
+            setValue={setDistrict}
+            placeholder="Select district"
+            style={{
+              borderColor: '#D1D5DB',
+              minHeight: 48
+            }}
+            placeholderStyle={{
+              color: '#6B7280',
+              fontFamily: 'Merriweather-Regular'
+            }}
+            textStyle={{
+              color: '#111827',
+              fontFamily: 'Merriweather-Regular'
+            }}
+          />
+        </StyledView>
+
+        {/* Locality Input */}
+        <StyledView className="mb-4">
+          <StyledText className="text-sm font-merriweather-medium mb-1">
+            Locality
+          </StyledText>
+          <StyledTextInput
+            className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+            placeholder="Enter your locality"
+            placeholderTextColor="#6B7280"
+            value={locality}
+            onChangeText={setLocality}
           />
         </StyledView>
       </StyledView>
@@ -369,11 +347,7 @@ const WorkerRegistration: React.FC<Props> = ({navigation}) => {
           }}
           searchable={true}
           searchPlaceholder="Search profession..."
-          listMode="MODAL"
-          modalProps={{
-            animationType: "fade"
-          }}
-          modalTitle="Select Profession"
+          zIndex={3000}
         />
       </StyledView>
 

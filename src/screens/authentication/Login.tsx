@@ -101,7 +101,7 @@ function LoginScreen({navigation}: LoginScreenProps): React.JSX.Element {
           disabled={phoneNumber.length !== 10}
         >
           <StyledText
-            className={`text-xl font-merriweather-medium ${
+            className={`text-xl font-merriweather-bold ${
               phoneNumber.length === 10 ? 'text-white' : 'text-gray-600'
             }`}
           >

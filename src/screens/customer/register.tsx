@@ -30,8 +30,6 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
   const [pincode, setPincode] = useState('');
   const [districtOpen, setDistrictOpen] = useState(false);
   const [availableDistricts, setAvailableDistricts] = useState<{label: string; value: string; areas: string[]}[]>([]);
-  const [localityOpen, setLocalityOpen] = useState(false);
-  const [availableLocalities, setAvailableLocalities] = useState<{label: string; value: string}[]>([]);
   const [isPincodeLoading, setIsPincodeLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -76,31 +74,19 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
           
           if (districtOptions.length === 1) {
             setDistrict(districtOptions[0].value);
-            const localityOptions = districtOptions[0].areas.map(area => ({
-              label: area,
-              value: area
-            }));
-            setAvailableLocalities(localityOptions);
-            
-            if (localityOptions.length === 1) {
-              setLocality(localityOptions[0].value);
+            if (districtOptions[0].areas.length > 0) {
+              setLocality(districtOptions[0].areas[0]);
             }
-          } else {
-            setDistrict('');
-            setLocality('');
-            setAvailableLocalities([]);
           }
         } else {
           showToast.error('Pincode not found in our database');
-          setState('');
-          setDistrict('');
-          setLocality('');
-          setAvailableDistricts([]);
-          setAvailableLocalities([]);
+          resetLocationFields();
         }
       } finally {
         setIsPincodeLoading(false);
       }
+    } else {
+      resetLocationFields();
     }
   };
 
@@ -127,26 +113,19 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
     }
   };
 
-  const handleDistrictChange = (value: string) => {
+  const handleDistrictChange = (value: any) => {
     setDistrict(value);
     
     // Find the selected district's areas
     const selectedDistrict = availableDistricts.find(d => d.value === value);
     if (selectedDistrict) {
-      const localityOptions = selectedDistrict.areas.map(area => ({
-        label: area,
-        value: area
-      }));
-      setAvailableLocalities(localityOptions);
-      
-      // If only one locality, select it automatically
-      if (localityOptions.length === 1) {
-        setLocality(localityOptions[0].value);
+      // Set locality to first area if available, but keep it editable
+      if (selectedDistrict.areas.length > 0) {
+        setLocality(selectedDistrict.areas[0]);
       } else {
-        setLocality(''); // Clear locality if multiple options
+        setLocality('');
       }
     } else {
-      setAvailableLocalities([]);
       setLocality('');
     }
   };
@@ -159,6 +138,13 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
       district !== '' &&
       state !== ''
     );
+  };
+
+  const resetLocationFields = () => {
+    setState('');
+    setDistrict('');
+    setLocality('');
+    setAvailableDistricts([]);
   };
 
   return (
@@ -235,7 +221,7 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
             />
           </StyledView>
 
-          {/* State Input (Auto-filled) */}
+          {/* State Input */}
           <StyledView className="mb-4">
             <StyledText className="text-sm font-merriweather-medium mb-1">
               State <StyledText className="text-red-500">*</StyledText>
@@ -249,8 +235,8 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
             />
           </StyledView>
 
-          {/* District Input */}
-          <StyledView className="mb-4 z-50">
+          {/* District Dropdown */}
+          <StyledView className="mb-4 z-40">
             <StyledText className="text-sm font-merriweather-medium mb-1">
               District <StyledText className="text-red-500">*</StyledText>
             </StyledText>
@@ -261,6 +247,10 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
               setOpen={setDistrictOpen}
               setValue={handleDistrictChange}
               placeholder="Select district"
+              style={{
+                borderColor: '#D1D5DB',
+                minHeight: 48
+              }}
               placeholderStyle={{
                 color: '#6B7280',
                 fontFamily: 'Merriweather-Regular'
@@ -269,50 +259,22 @@ const CustomerRegistration: React.FC<Props> = ({navigation, route}) => {
                 color: '#111827',
                 fontFamily: 'Merriweather-Regular'
               }}
-              style={{
-                borderColor: '#D1D5DB',
-                minHeight: 48
-              }}
-              zIndex={3000}
+              zIndex={2000}
             />
           </StyledView>
 
-          {/* Locality Input */}
-          <StyledView className="mb-4 z-40">
+          {/* Locality Input - Now always editable */}
+          <StyledView className="mb-4">
             <StyledText className="text-sm font-merriweather-medium mb-1">
               Locality
             </StyledText>
-            {availableLocalities.length > 0 ? (
-              <DropDownPicker
-                open={localityOpen}
-                value={locality}
-                items={availableLocalities}
-                setOpen={setLocalityOpen}
-                setValue={setLocality}
-                placeholder="Select locality"
-                style={{
-                  borderColor: '#D1D5DB',
-                  minHeight: 48
-                }}
-                placeholderStyle={{
-                  color: '#6B7280',
-                  fontFamily: 'Merriweather-Regular'
-                }}
-                textStyle={{
-                  color: '#111827',
-                  fontFamily: 'Merriweather-Regular'
-                }}
-                zIndex={2000}
-              />
-            ) : (
-              <StyledTextInput
-                className="border border-gray-300 rounded-lg p-3 font-merriweather-regular bg-gray-100"
-                value={locality}
-                editable={false}
-                placeholder="Select district first"
-                placeholderTextColor="#6B7280"
-              />
-            )}
+            <StyledTextInput
+              className="border border-gray-300 rounded-lg p-3 font-merriweather-regular"
+              placeholder="Enter your locality"
+              placeholderTextColor="#6B7280"
+              value={locality}
+              onChangeText={setLocality}
+            />
           </StyledView>
         </StyledView>
 
